@@ -1,0 +1,27 @@
+{
+  "name": "iterable-h",
+  "version": "1.0.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc --declaration && npm run tslint",
+    "watch": "tsc -w",
+    "tslint": "tslint -c tslint.json -p tsconfig.json",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {},
+  "dependencies": {
+    "iterable": "^4.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/opennetwork/iterable-h.git"
+  },
+  "devDependencies": {
+    "@types/node": "^12.7.4",
+    "esm": "^3.2.25",
+    "tslint": "^5.19.0",
+    "typescript": "^3.6.2"
+  }
+}
