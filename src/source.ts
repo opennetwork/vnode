@@ -1,29 +1,74 @@
 import { AsyncIterableLike, isAsyncIterable, isIterable } from "iterable";
 import { SourceOptions, HydratedSourceOptions } from "./source-options";
-import { VContextLike } from "./vcontext";
+import { VContext } from "./vcontext";
+import { AsyncVNode, isVNode, SyncVNode } from "./vnode";
 
 export type SourceReference = string | symbol | number;
-export type AsyncSourceReferenceRepresentation = Promise<SourceReference> | AsyncIterable<SourceReference>;
-export type SyncSourceReferenceRepresentation = SourceReference | Iterable<SourceReference>;
+export type AsyncSourceReferenceRepresentation = AsyncVNode | Promise<SourceReference> | AsyncIterable<SourceReference>;
+export type SyncSourceReferenceRepresentation = SyncVNode | SourceReference | Iterable<SourceReference>;
 export type SourceReferenceRepresentation = AsyncSourceReferenceRepresentation | SyncSourceReferenceRepresentation;
-export type SourceReferenceFactory<C extends VContextLike, O extends SourceOptions<C>> = (options: O & HydratedSourceOptions<C>) => SourceReferenceRepresentation;
-export type SourceReferenceLike<C extends VContextLike, O extends SourceOptions<C>> = SourceReferenceRepresentation | SourceReferenceFactory<C, O>;
-export type BasicSource<C extends VContextLike, O extends SourceOptions<C>> = SourceReferenceLike<C, O> | AsyncIterableLike<SourceReferenceLike<C, O>>;
-export type Source<C extends VContextLike, O extends SourceOptions<C>> = BasicSource<C, O> | AsyncIterableLike<BasicSource<C, O>>;
+export type SourceReferenceFactory<C extends VContext, O extends SourceOptions<C>> = (options: O & HydratedSourceOptions<C>) => SourceReferenceRepresentation;
+export type SourceReferenceLike<C extends VContext, O extends SourceOptions<C>> = SourceReferenceRepresentation | SourceReferenceFactory<C, O>;
+export type BasicSource<C extends VContext, O extends SourceOptions<C>> = SourceReferenceLike<C, O> | AsyncIterableLike<SourceReferenceLike<C, O>>;
+export type Source<C extends VContext, O extends SourceOptions<C>> = BasicSource<C, O> | AsyncIterableLike<BasicSource<C, O>>;
 
-export interface AsyncSourceDetail {
-  async: true;
-  reference: AsyncSourceReferenceRepresentation;
+export interface SourceReferenceDetail<Async extends boolean = boolean, Reference extends SourceReferenceRepresentation = SourceReferenceRepresentation> {
+  async: Async;
+  reference: Reference;
 }
 
-export interface SyncSourceDetail {
-  async: false;
-  reference: SyncSourceReferenceRepresentation;
+export interface AsyncSourceReferenceDetail extends SourceReferenceDetail<true, AsyncSourceReferenceRepresentation> {
+
 }
 
-export type SourceReferenceDetail = AsyncSourceDetail | SyncSourceDetail;
+export interface SyncSourceReferenceDetail extends SourceReferenceDetail<false, SyncSourceReferenceRepresentation> {
 
-function isPromise<T = unknown>(value: unknown): value is Promise<T> {
+}
+
+export function isAsyncSourceReferenceDetail(source: unknown): source is AsyncSourceReferenceDetail {
+  function isAsyncSourceReferenceDetailLike(value: unknown): value is { async?: unknown, reference?: unknown } {
+    return typeof value === "object";
+  }
+  return (
+    isAsyncSourceReferenceDetailLike(source) &&
+    source.async === true &&
+    isAsyncSourceReferenceRepresentation(source.reference)
+  );
+}
+
+export function isSyncSourceReferenceDetail(source: unknown): source is SyncSourceReferenceDetail {
+  function isSyncSourceReferenceDetailLike(value: unknown): value is { async?: unknown, reference?: unknown } {
+    return typeof value === "object";
+  }
+  return (
+    isSyncSourceReferenceDetailLike(source) &&
+    source.async === false &&
+    isSyncSourceReferenceRepresentation(source.reference)
+  );
+}
+
+export function isSourceReferenceDetail(value: unknown): value is SourceReferenceDetail {
+  return (
+    isAsyncSourceReferenceDetail(value) ||
+    isSyncSourceReferenceDetail(value)
+  );
+}
+
+export function isIterableIterator(value: unknown): value is (IterableIterator<any> | AsyncIterableIterator<any>)  {
+  function isIteratorLike(value: unknown): value is { next?: unknown } {
+    return typeof value === "object";
+  }
+  return (
+    isIteratorLike(value) &&
+    value.next instanceof Function &&
+    (
+      isAsyncIterable(value) ||
+      isIterable(value)
+    )
+  );
+}
+
+export function isPromise<T = unknown>(value: unknown): value is Promise<T> {
   function isPromiseLike(value: unknown): value is { then?: unknown } {
     return typeof value === "object";
   }
@@ -33,40 +78,58 @@ function isPromise<T = unknown>(value: unknown): value is Promise<T> {
   );
 }
 
-export function isAsyncSourceReferenceRepresentation(value: Source<any, unknown>): value is AsyncSourceReferenceRepresentation {
+export function isAsyncSourceReferenceRepresentation(value: unknown): value is AsyncSourceReferenceRepresentation {
   return (
     isAsyncIterable(value) ||
-    isPromise(value)
+    isPromise(value) ||
+    isIterableIterator(value)
   );
 }
 
-export function isSyncSourceReferenceRepresentation(value: Source<any, unknown>): value is SyncSourceReferenceRepresentation {
+export function isSourceReference(value: unknown): value is SourceReference {
   return (
-    isIterable(value) ||
     typeof value === "symbol" ||
     typeof value === "string" ||
     typeof value === "number"
   );
 }
 
-export function getSourceReferenceDetail<C extends VContextLike, O extends HydratedSourceOptions<C>>(context: C, source: Source<C, unknown>, options: O): SourceReferenceDetail {
+export function isSyncSourceReferenceRepresentation(value: unknown): value is SyncSourceReferenceRepresentation {
+  return (
+    isIterable(value) ||
+    isSourceReference(value) ||
+    isVNode(value)
+  );
+}
+
+export function getSourceReferenceDetail<C extends VContext, O extends HydratedSourceOptions<C>>(context: C, source: Source<C, unknown>, options: O): SourceReferenceDetail {
+  if (!isSourceReference(source) && context.weak.has(source)) {
+    const value = context.weak.get(source);
+    if (isSourceReferenceDetail(value)) {
+      return value;
+    }
+  }
   if (source instanceof Function) {
     const reference = source({
       ...options
     });
-    return getSourceReferenceDetail(context, reference, options);
+    const detail = getSourceReferenceDetail(context, reference, options);
+    context.weak.set(source, detail);
+    return detail;
   }
-  if (isAsyncSourceReferenceRepresentation(source)) {
-    return {
-      async: true,
-      reference: source
-    };
-  }
-  if (isSyncSourceReferenceRepresentation(source)) {
+  if (isSourceReference(source)) {
     return {
       async: false,
       reference: source
     };
   }
-  return undefined;
+  const detail = {
+    async: isAsyncSourceReferenceRepresentation(source),
+    reference: source
+  };
+  if (!isSourceReferenceDetail(detail)) {
+    return undefined;
+  }
+  context.weak.set(source, detail);
+  return detail;
 }
