@@ -9,7 +9,7 @@
             "node"
         ],
         "esModuleInterop": true,
-        "target": "es6",
+        "target": "esnext",
         "noImplicitAny": true,
         "downlevelIteration": true,
         "moduleResolution": "node",

@@ -3,16 +3,18 @@
   "version": "2.0.0",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "type": "module",
   "license": "MIT",
   "scripts": {
-    "build": "rm -rf dist && tsc --declaration && npm run tslint",
+    "build": "tsc --declaration && npm run tslint",
     "watch": "tsc -w",
     "tslint": "tslint -c tslint.json -p tsconfig.json",
     "prepublishOnly": "npm run build"
   },
   "peerDependencies": {},
   "dependencies": {
-    "iterable": "^4.1.0"
+    "iterable": "^4.1.0",
+    "iterable-h": "./"
   },
   "repository": {
     "type": "git",
@@ -21,6 +23,7 @@
   "devDependencies": {
     "@types/node": "^12.7.4",
     "esm": "^3.2.25",
+    "htm": "^2.2.1",
     "tslint": "^5.19.0",
     "typescript": "^3.6.2"
   }

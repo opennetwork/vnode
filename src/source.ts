@@ -1,11 +1,11 @@
 import { AsyncIterableLike, isAsyncIterable, isIterable } from "iterable";
 import { SourceOptions, HydratedSourceOptions } from "./source-options";
 import { VContext } from "./vcontext";
-import { AsyncVNode, isVNode, SyncVNode } from "./vnode";
+import { isVNode, VNodeRepresentation } from "./vnode";
 
 export type SourceReference = string | symbol | number;
-export type AsyncSourceReferenceRepresentation = AsyncVNode | Promise<SourceReference> | AsyncIterable<SourceReference>;
-export type SyncSourceReferenceRepresentation = SyncVNode | SourceReference | Iterable<SourceReference>;
+export type AsyncSourceReferenceRepresentation = VNodeRepresentation | Promise<SourceReference> | AsyncIterable<SourceReference>;
+export type SyncSourceReferenceRepresentation = SourceReference | Iterable<SourceReference>;
 export type SourceReferenceRepresentation = AsyncSourceReferenceRepresentation | SyncSourceReferenceRepresentation;
 export type SourceReferenceFactory<C extends VContext, O extends SourceOptions<C>> = (options: O & HydratedSourceOptions<C>) => SourceReferenceRepresentation;
 export type SourceReferenceLike<C extends VContext, O extends SourceOptions<C>> = SourceReferenceRepresentation | SourceReferenceFactory<C, O>;
@@ -80,6 +80,7 @@ export function isPromise<T = unknown>(value: unknown): value is Promise<T> {
 
 export function isAsyncSourceReferenceRepresentation(value: unknown): value is AsyncSourceReferenceRepresentation {
   return (
+    isVNode(value) ||
     isAsyncIterable(value) ||
     isPromise(value) ||
     isIterableIterator(value)
@@ -97,12 +98,12 @@ export function isSourceReference(value: unknown): value is SourceReference {
 export function isSyncSourceReferenceRepresentation(value: unknown): value is SyncSourceReferenceRepresentation {
   return (
     isIterable(value) ||
-    isSourceReference(value) ||
-    isVNode(value)
+    isSourceReference(value)
   );
 }
 
 export function getSourceReferenceDetail<C extends VContext, O extends HydratedSourceOptions<C>>(context: C, source: Source<C, unknown>, options: O): SourceReferenceDetail {
+  console.log(source, options);
   if (!isSourceReference(source) && context.weak.has(source)) {
     const value = context.weak.get(source);
     if (isSourceReferenceDetail(value)) {

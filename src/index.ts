@@ -4,11 +4,22 @@ import {
   SourceReferenceDetail,
   SourceReference,
   isPromise,
-  isSourceReference, SourceReferenceRepresentation, isIterableIterator, isSourceReferenceDetail
+  isSourceReference,
+  SourceReferenceRepresentation,
+  isSourceReferenceDetail,
+  isIterableIterator
 } from "./source";
 import { HydratedSourceOptions, SourceOptions } from "./source-options";
-import { VContext } from "./vcontext";
-import { isVNode, VNode, VNodeRepresentation } from "./vnode";
+import { VContext, isNativeVContext } from "./vcontext";
+import {
+  HydratableVNode,
+  isHydratableVNode,
+  isNativeVNode,
+  isScalarVNode,
+  isVNode,
+  VNode,
+  VNodeRepresentation
+} from "./vnode";
 import {
   asyncDrain,
   asyncExtendedIterable,
@@ -25,9 +36,34 @@ export * from "./source-options";
 export * from "./vcontext";
 export * from "./vnode";
 
+async function assertNonNative(context: VContext, reference: SourceReference, message?: string): Promise<void> {
+  if (!isNativeVContext(context)) {
+    return;
+  }
+  if (await context.isNative(reference)) {
+    throw new Error(message || "Found native reference when not expected");
+  }
+}
+
+async function *flatten<C extends VContext, HO extends HydratedSourceOptions<C>>(context: C, node: unknown, options: HO): AsyncIterable<SourceReference> {
+  if (isSourceReference(node)) {
+    await assertNonNative(context, node, "flatten found non reference");
+    return yield node;
+  }
+  if (!isVNode(node)) {
+    return;
+  }
+  if (node.reference !== Fragment) {
+    return yield* flatten(context, node.reference, options);
+  }
+  for await (const reference of node.children) {
+    yield* flatten(context, reference, options);
+  }
+}
+
 async function *generateChildren<C extends VContext, HO extends HydratedSourceOptions<C>>(context: VContext, options: HO, children: Iterable<VNodeRepresentation> | SourceReferenceRepresentation | VNodeRepresentation): AsyncIterable<VNode["reference"]> {
   for await (const node of generateChildrenVNodes(context, options, children)) {
-    yield node.reference;
+    yield isVNode(node) ? node.reference : undefined;
   }
 }
 
@@ -61,16 +97,21 @@ async function getNext<T>(iterator: Iterator<T> | AsyncIterator<T>, value?: any)
 
 async function *generateChildrenVNodes<C extends VContext,  HO extends HydratedSourceOptions<C>>(context: VContext, options: HO, children: Iterable<VNodeRepresentation> | SourceReferenceRepresentation | VNodeRepresentation): AsyncIterable<VNode> {
   const detail = getSourceReferenceDetail(context, children, options);
+  if (!isSourceReferenceDetail(detail)) {
+    return yield undefined;
+  }
   let reference = detail.reference;
   if (isPromise(reference)) {
     reference = await reference;
   }
   if (isVNode(reference)) {
-    return reference;
+    await assertNonNative(context, reference.reference);
+    return yield reference;
   }
   if (isAsyncIterable(reference)) {
     for await (const value of reference) {
       if (isSourceReference(value)) {
+        await assertNonNative(context, value);
         yield await context.get(value);
       } else {
         yield* generateChildrenVNodes(context, options, value);
@@ -79,55 +120,72 @@ async function *generateChildrenVNodes<C extends VContext,  HO extends HydratedS
   } else if (isIterable(reference)) {
     for (const value of reference) {
       if (isSourceReference(value)) {
+        await assertNonNative(context, value);
         yield await context.get(value);
       } else {
         yield* generateChildrenVNodes(context, options, value);
       }
     }
   } else {
+    await assertNonNative(context, reference);
     yield await context.get(reference);
   }
 }
 
-async function *hydrate<C extends VContext, HO extends HydratedSourceOptions<C>>(context: C, detail: SourceReferenceDetail, options: HO, children: Iterable<VNodeRepresentation>): AsyncIterable<VNode> {
+async function *hydrate<C extends VContext, HO extends HydratedSourceOptions<C>>(context: C, detail: SourceReferenceDetail, options: HO): AsyncIterable<VNode | undefined> {
   if (!isSourceReferenceDetail(detail)) {
-    yield undefined;
-    return;
+    return yield undefined;
   }
 
-  let reference: SourceReferenceRepresentation = detail.reference;
+  let componentReference: SourceReferenceRepresentation = detail.reference;
 
-  if (isPromise(reference)) {
-    reference = await reference;
+  if (isPromise(componentReference)) {
+    componentReference = await componentReference;
   }
 
-  if (isVNode(reference)) {
-    await context.set(reference.reference, reference);
-    yield reference;
-    return;
-  }
-
-  let referenced = new Set<SourceReference>();
+  let referenced = new Map<SourceReference, VNode>();
   let remove = new Set<SourceReference>();
 
-  async function hydrateVNode(reference: SourceReference, children: Iterable<VNodeRepresentation>): Promise<VNode> {
-    const current = await context.get(reference);
-    referenced = new Set<SourceReference>();
+  if (isVNode(componentReference)) {
+    return yield hydrateable(componentReference, referenced, remove);
+  }
+
+  async function hydrateVNode(componentReference: SourceReference, children: VNodeRepresentation): Promise<VNode | HydratableVNode<C, HO>> {
+    // Native skip back to current
+    referenced = new Map<SourceReference, VNode>();
     remove = new Set<SourceReference>();
-    const next: VNode = {
-      reference,
-      children: iterateChildren(
-        asyncExtendedIterable(current ? current.children : [])[Symbol.asyncIterator](),
-        generateChildren(context, options, children)[Symbol.asyncIterator]()
-      )
-    };
-    await context.set(reference, next);
-    for (const referenceToRemove of remove) {
-      if (referenced.has(referenceToRemove) || referenceToRemove === reference) {
-        continue;
-      }
-      await context.remove(referenceToRemove);
+    const native = context.getNative ? await context.getNative(componentReference) : undefined;
+    if (isNativeVNode(native)) {
+      const nextNative = {
+        ...native,
+        reference: options.reference,
+        options
+      };
+      referenced.set(options.reference, nextNative);
+      await context.set(options.reference, nextNative);
+      return nextNative;
     }
+    const current = await context.get(options.reference);
+    if (!current && isSourceReference(componentReference)) {
+      const possibleScalar = await context.get(componentReference);
+      if (isScalarVNode(possibleScalar)) {
+        return possibleScalar;
+      }
+    }
+    const next: HydratableVNode<C, HO> = {
+      reference: options.reference,
+      source: undefined,
+      options,
+      children: {
+        [Symbol.asyncIterator]: () => iterateChildren(
+          asyncExtendedIterable(current ? current.children : [])[Symbol.asyncIterator](),
+          generateChildren(context, options, children)[Symbol.asyncIterator]()
+        )[Symbol.asyncIterator]()
+      }
+    };
+    next.source = next;
+    referenced.set(next.reference, next);
+    await context.set(next.reference, next);
     return next;
   }
 
@@ -162,8 +220,7 @@ async function *hydrate<C extends VContext, HO extends HydratedSourceOptions<C>>
         continue;
       }
 
-      referenced.add(rightNode.reference);
-
+      referenced.set(rightNode.reference, rightNode);
       yield rightNode.reference;
     } while (!rightNext.done);
 
@@ -174,7 +231,7 @@ async function *hydrate<C extends VContext, HO extends HydratedSourceOptions<C>>
       if (referenced.has(leftNext.value)) {
         continue;
       }
-      await context.remove(leftNext.value);
+      remove.add(leftNext.value);
     }
 
     if (left.return) {
@@ -215,22 +272,77 @@ async function *hydrate<C extends VContext, HO extends HydratedSourceOptions<C>>
 
   let vNode: VNode | AsyncIterable<VNode>;
 
-  const iterable = isIterable(reference) || isAsyncIterable(reference);
+  const iterable = isIterable(componentReference) || isAsyncIterable(componentReference);
 
-  if (isSourceReference(reference)) {
-    vNode = await hydrateVNode(reference, children);
-  } else if (iterable && !isIterableIterator(reference)) {
-    vNode = await hydrateVNode(Fragment, children);
-  } else if (iterable && isIterableIterator(reference)) {
-    vNode = generator(Symbol(), reference);
+  if (isSourceReference(componentReference)) {
+    vNode = await hydrateVNode(componentReference, options.children);
+  } else if (iterable && !isIterableIterator(componentReference)) {
+    vNode = await hydrateVNode(options.reference, asyncExtendedIterable(generateChildrenVNodes(context, options, componentReference)).retain());
+  } else if (iterable && isIterableIterator(componentReference)) {
+    vNode = generator(Symbol("Iterable Iterator"), componentReference);
   }
 
   if (isAsyncIterable(vNode)) {
     for await (const nextVNode of vNode) {
-      yield nextVNode;
+      if (!isVNode(nextVNode)) {
+        yield undefined;
+      } else {
+        yield hydrateable(nextVNode, referenced, remove);
+      }
     }
-  } else {
-    yield vNode;
+  } else if (vNode) {
+    yield hydrateable(vNode, referenced, remove);
+  }
+
+  function hydrateable(node: VNode, referenced: Map<SourceReference, VNode>, remove: Set<SourceReference>): VNode {
+    if (!isVNode(node)) {
+      throw new Error("Received non VNode");
+    }
+    if (isScalarVNode(node)) {
+      return node;
+    }
+    async function *children(): AsyncIterable<SourceReference> {
+      for await (const child of node.children) {
+        if (!isSourceReference(child)) {
+          continue;
+        }
+        const vNode = await context.get(child);
+        if (!isVNode(vNode)) {
+          continue;
+        }
+        referenced.set(child, vNode);
+      }
+      let replacementNode: VNode = node;
+      for (const [reference, vNode] of referenced.entries()) {
+        if (!isSourceReference(reference) || !isVNode(vNode)) {
+          continue;
+        }
+        let returnedNode;
+        if (isHydratableVNode(context, vNode)) {
+          returnedNode = await context.hydrate(reference, isNativeVNode(vNode) ? vNode : vNode.source, context, isHydratableVNode(context, vNode) ? (vNode.options || options) : options);
+        } else {
+          returnedNode = await context.hydrate(reference, vNode, context, options);
+        }
+        referenced.set(returnedNode.reference, returnedNode);
+        if (options.reference === returnedNode.reference) {
+          replacementNode = returnedNode;
+        }
+      }
+      yield* flatten(context, replacementNode, options);
+      for (const toRemove of remove) {
+        if (referenced.has(toRemove)) {
+          continue;
+        }
+        await context.remove(toRemove);
+        remove.delete(toRemove);
+      }
+    }
+    return {
+      reference: Fragment,
+      children: {
+        [Symbol.asyncIterator]: () => children()[Symbol.asyncIterator]()
+      }
+    };
   }
 
   async function *generator(newReference: SourceReference, reference: IterableIterator<SourceReference> | AsyncIterableIterator<SourceReference>): AsyncIterableIterator<VNode> {
@@ -241,7 +353,7 @@ async function *hydrate<C extends VContext, HO extends HydratedSourceOptions<C>>
         break;
       }
       const detail = getSourceReferenceDetail(context, next.value, options);
-      yield* hydrate(context, detail, options, children);
+      yield* hydrate(context, detail, options);
     } while (!next.done);
   }
 }
@@ -266,20 +378,12 @@ export function createHydrator<C extends VContext>(contextSource: C | AsyncItera
   }
   const contextAccessor = contextGenerator()[Symbol.asyncIterator]();
 
-  return async function *h<O extends SourceOptions<C>>(source: Source<C, O>, options: O, children: VNodeRepresentation, ...additionalChildren: VNodeRepresentation[]): AsyncIterable<VNode> {
-    const contextResult: IteratorResult<C> = options.context ? { done: false, value: options.context } : await contextAccessor.next();
+  return async function *h<O extends SourceOptions<C>>(source: Source<C, O>, options?: O, children?: VNodeRepresentation, ...additionalChildren: VNodeRepresentation[]): AsyncIterable<VNode | undefined> {
+    const contextResult: IteratorResult<C> = (options && options.context) ? { done: false, value: options.context } : await contextAccessor.next();
     if (contextResult.done) {
       return undefined;
     }
     const context = contextResult.value;
-    const hydratedOptions: O & HydratedSourceOptions<C> = {
-      ...options,
-      context
-    };
-    const reference = getSourceReferenceDetail(context, source, hydratedOptions);
-    if (!reference) {
-      throw new Error("Unable to retrieve reference representation");
-    }
     let allChildren: Iterable<VNodeRepresentation> = [
       children
     ];
@@ -289,6 +393,24 @@ export function createHydrator<C extends VContext>(contextSource: C | AsyncItera
         ...additionalChildren
       ];
     }
-    yield* hydrate(context, reference, hydratedOptions, allChildren);
+    const baseHydratedOptions: O & HydratedSourceOptions<C> = {
+      ...options,
+      reference: options.reference || Symbol("Element"),
+      context,
+      children: []
+    };
+    const hydratedOptions: O & HydratedSourceOptions<C> = {
+      ...baseHydratedOptions,
+      children: generateChildren(context, baseHydratedOptions, allChildren)
+    };
+    const reference = getSourceReferenceDetail(context, source, hydratedOptions);
+    if (!reference) {
+      throw new Error("Unable to retrieve reference representation");
+    }
+    for await (const node of hydrate(context, reference, hydratedOptions)) {
+      for await (const reference of flatten(context, node, hydratedOptions)) {
+        yield await context.get(reference);
+      }
+    }
   };
 }
