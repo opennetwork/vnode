@@ -1,13 +1,14 @@
 import { isSourceReference, SourceReference } from "./source";
 import { isAsyncIterable } from "iterable";
-import { HydratedSourceOptions, VContext } from "./index";
+import { VContext } from "./vcontext";
+import { ContextSourceOptions } from "./source-options";
 
 export interface VNode {
   reference: SourceReference;
   children: AsyncIterable<SourceReference>;
 }
 
-export interface HydratableVNode<C extends VContext, O extends HydratedSourceOptions<C>> extends VNode {
+export interface HydratableVNode<C extends VContext, O extends ContextSourceOptions<C>> extends VNode {
   source: VNode;
   options?: O;
 }
@@ -41,7 +42,7 @@ export function isVNode(value: unknown): value is VNode {
   );
 }
 
-export function isHydratableVNode<C extends VContext, O extends HydratedSourceOptions<C>>(context: C, value: unknown): value is HydratableVNode<C, O> {
+export function isHydratableVNode<C extends VContext, O extends ContextSourceOptions<C>>(context: C, value: unknown): value is HydratableVNode<C, O> {
   function isHydratableVNodeLike(value: unknown): value is VNode & { source?: unknown, options?: unknown } {
     return isVNode(value);
   }

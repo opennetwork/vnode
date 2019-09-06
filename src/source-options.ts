@@ -8,7 +8,7 @@ export interface SourceOptions<C extends VContext> {
   reference?: SourceReference;
 }
 
-export interface HydratedSourceOptions<C extends VContext> extends SourceOptions<C> {
+export interface ContextSourceOptions<C extends VContext> extends SourceOptions<C> {
   readonly context: C;
   readonly children: AsyncIterable<VNode>;
 }

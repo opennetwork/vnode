@@ -1,8 +1,6 @@
-import {WeakVContext, createHydrator, isHydratableVNode, isNativeVNode, isHydratedVNode} from "../dist";
+import { WeakVContext, context, isHydratableVNode, isNativeVNode, isHydratedVNode } from "../dist";
 import { asyncExtendedIterable } from "iterable";
 import htm from "htm";
-
-
 
 class NativeVNode  {
 
@@ -61,26 +59,9 @@ class DOMContext extends WeakVContext {
     }
   }
 
-  async hydrate(reference, node, context, options) {
-    if (isHydratedVNode(node)) {
-      return node;
-    }
-    if (node instanceof NativeVNode) {
-      return node.hydrate(node, options);
-    }
-    if (isHydratableVNode(context, node) && isNativeVNode(node)) {
-      await this.hydrate(reference, node.source, context, options);
-      return {
-        ...node,
-        hydrated: true
-      };
-    }
-    return super.hydrate(reference, node, context, options);
-  }
-
 }
 
-const h = createHydrator(new DOMContext());
+const h = context(new DOMContext());
 const html = htm.bind(h);
 
 const nodes = h(

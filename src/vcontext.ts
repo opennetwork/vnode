@@ -1,6 +1,5 @@
 import { SourceReference } from "./source";
-import { VNode, isVNode, ScalarVNode, isHydratedVNode, NativeVNode } from "./vnode";
-import { HydratedSourceOptions } from "./source-options";
+import { VNode, isVNode, ScalarVNode, NativeVNode } from "./vnode";
 
 export interface VContext {
 
@@ -13,7 +12,6 @@ export interface VContext {
   get(reference: SourceReference): Promise<VNode>;
   set(reference: SourceReference, node: VNode): Promise<void>;
   remove(reference: SourceReference): Promise<void>;
-  hydrate<C extends VContext, O extends HydratedSourceOptions<C>>(reference: SourceReference, node: VNode, context: C, options: O): Promise<VNode>;
   clear(): Promise<void>;
 
 }
@@ -109,29 +107,16 @@ export class WeakVContext implements VContext {
     return undefined;
   }
 
-  private isThisContext(value: unknown): value is this {
-    return value === this;
-  }
-
-  async hydrate<C extends VContext, O extends HydratedSourceOptions<C>>(reference: SourceReference, node: VNode, context: C, options: O) {
-    if (isHydratedVNode(node)) {
-      return node; // Ready to roll
-    }
-    if (!this.isThisContext(context)) {
-      return {
-        ...context.hydrate(reference, node, context, options),
-        hydrated: true
-      };
-    }
-    await this.set(reference, node);
-    // Nothing to do, an abstract function allowing for extension
-    return {
-      ...node,
-      hydrated: true
-    };
-  }
-
   async clear() {
     this[WeakVContextReference] = {};
+  }
+}
+
+export async function assertNonNative(context: VContext, reference: SourceReference, message?: string): Promise<void> {
+  if (!isNativeVContext(context)) {
+    return;
+  }
+  if (await context.isNative(reference)) {
+    throw new Error(message || "Found native reference when not expected");
   }
 }

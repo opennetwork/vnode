@@ -1,5 +1,5 @@
 import { AsyncIterableLike, isAsyncIterable, isIterable } from "iterable";
-import { SourceOptions, HydratedSourceOptions } from "./source-options";
+import { SourceOptions, ContextSourceOptions } from "./source-options";
 import { VContext } from "./vcontext";
 import { isVNode, VNodeRepresentation } from "./vnode";
 
@@ -7,7 +7,7 @@ export type SourceReference = string | symbol | number;
 export type AsyncSourceReferenceRepresentation = VNodeRepresentation | Promise<SourceReference> | AsyncIterable<SourceReference>;
 export type SyncSourceReferenceRepresentation = SourceReference | Iterable<SourceReference>;
 export type SourceReferenceRepresentation = AsyncSourceReferenceRepresentation | SyncSourceReferenceRepresentation;
-export type SourceReferenceFactory<C extends VContext, O extends SourceOptions<C>> = (options: O & HydratedSourceOptions<C>) => SourceReferenceRepresentation;
+export type SourceReferenceFactory<C extends VContext, O extends SourceOptions<C>> = (options: O & ContextSourceOptions<C>) => SourceReferenceRepresentation;
 export type SourceReferenceLike<C extends VContext, O extends SourceOptions<C>> = SourceReferenceRepresentation | SourceReferenceFactory<C, O>;
 export type BasicSource<C extends VContext, O extends SourceOptions<C>> = SourceReferenceLike<C, O> | AsyncIterableLike<SourceReferenceLike<C, O>>;
 export type Source<C extends VContext, O extends SourceOptions<C>> = BasicSource<C, O> | AsyncIterableLike<BasicSource<C, O>>;
@@ -102,7 +102,7 @@ export function isSyncSourceReferenceRepresentation(value: unknown): value is Sy
   );
 }
 
-export function getSourceReferenceDetail<C extends VContext, O extends HydratedSourceOptions<C>>(context: C, source: Source<C, unknown>, options: O): SourceReferenceDetail {
+export function getSourceReferenceDetail<C extends VContext, O extends ContextSourceOptions<C>>(context: C, source: Source<C, unknown>, options: O): SourceReferenceDetail {
   if (!isSourceReference(source) && context.weak.has(source)) {
     const value = context.weak.get(source);
     if (isSourceReferenceDetail(value)) {
