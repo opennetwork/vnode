@@ -1,4 +1,4 @@
-import { WeakVContext, context, isHydratableVNode, isNativeVNode, isHydratedVNode } from "../dist";
+import { WeakVContext, context } from "../dist";
 import { asyncExtendedIterable } from "iterable";
 import htm from "htm";
 
