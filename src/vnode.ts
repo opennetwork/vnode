@@ -5,7 +5,7 @@ import { ContextSourceOptions } from "./source-options";
 
 export interface VNode {
   reference: SourceReference;
-  children: AsyncIterable<SourceReference>;
+  children?: AsyncIterable<SourceReference>;
 }
 
 export interface HydratableVNode<C extends VContext, O extends ContextSourceOptions<C>> extends VNode {
@@ -14,7 +14,7 @@ export interface HydratableVNode<C extends VContext, O extends ContextSourceOpti
 }
 
 export interface ScalarVNode extends VNode {
-  reference: string | number;
+  value: string | number;
   scalar: true;
 }
 
@@ -38,7 +38,10 @@ export function isVNode(value: unknown): value is VNode {
   return (
     isVNodeLike(value) &&
     isSourceReference(value.reference) &&
-    isAsyncIterable(value.children)
+    (
+      !value.children ||
+      isAsyncIterable(value.children)
+    )
   );
 }
 
@@ -94,4 +97,17 @@ export function isScalarVNode(value: unknown): value is ScalarVNode {
     isScalarVNodeLike(value) &&
     value.scalar === true
   );
+}
+
+export async function getScalar(options: { context: VContext, reference?: SourceReference }, reference: SourceReference) {
+  if (typeof reference !== "string" && typeof reference !== "number") {
+    return undefined;
+  }
+  const scalar = {
+    reference: options.reference || Symbol("Scalar"),
+    value: reference,
+    scalar: true
+  };
+  await options.context.set(scalar.reference, scalar);
+  return scalar;
 }

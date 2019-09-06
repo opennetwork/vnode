@@ -44,24 +44,10 @@ class DOMContext extends WeakVContext {
     };
   }
 
-  async get(reference) {
-    const result = await super.get(reference);
-    if (result) {
-      return result;
-    }
-    if (typeof reference !== "string" && typeof reference !== "number") {
-      return undefined;
-    }
-    return {
-      reference,
-      scalar: true,
-      children: asyncExtendedIterable([])
-    }
-  }
-
 }
 
-const h = context(new DOMContext());
+const currentContext = new DOMContext();
+const h = context(currentContext);
 const html = htm.bind(h);
 
 const nodes = h(
@@ -99,7 +85,7 @@ const nodes = h(
     console.log("I'm done");
   },
   {
-
+    context: currentContext.isolate("root")
   }
 );
 
@@ -108,6 +94,10 @@ const nodesIterator = nodes[Symbol.asyncIterator]();
 asyncExtendedIterable(nodesIterator)
   .forEach(async node => {
     console.log("output", node ? { ...node, children: await asyncExtendedIterable(node.children).toArray() } : undefined, node ? node === node.source : undefined);
+    // if (node) {
+    //   const isolate = await currentContext.isolate("first");
+    //   console.log(await isolate.get("first"));
+    // }
   })
   .then(() => console.log("Complete"))
   .catch(console.error);

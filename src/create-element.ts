@@ -10,7 +10,16 @@ import {
   SourceReferenceRepresentation,
   Source
 } from "./source";
-import { HydratableVNode, isNativeVNode, isScalarVNode, isVNode, VNode, VNodeRepresentation } from "./vnode";
+import {
+  getScalar,
+  HydratableVNode,
+  isNativeVNode,
+  isScalarVNode,
+  isVNode,
+  ScalarVNode,
+  VNode,
+  VNodeRepresentation
+} from "./vnode";
 import { asyncExtendedIterable, isAsyncIterable, isIterable } from "iterable";
 import { flattenAndGet } from "./flatten";
 import { generateChildren, generateChildrenVNodes } from "./children";
@@ -29,17 +38,11 @@ export async function *createElementWithContext<C extends VContext, HO extends C
     componentReference = await componentReference;
   }
 
-  let referenced = new Map<SourceReference, VNode>();
-  let remove = new Set<SourceReference>();
-
   if (isVNode(componentReference)) {
     return yield* flattenAndGet(options.context, componentReference, options);
   }
 
-  async function hydrateVNode(componentReference: SourceReference, children: VNodeRepresentation): Promise<VNode | HydratableVNode<C, HO>> {
-    // Native skip back to current
-    referenced = new Map<SourceReference, VNode>();
-    remove = new Set<SourceReference>();
+  async function hydrateVNode(componentReference: SourceReference, children: VNodeRepresentation): Promise<VNode | HydratableVNode<C, HO> | ScalarVNode> {
     const native = options.context.getNative ? await options.context.getNative(componentReference) : undefined;
     if (isNativeVNode(native)) {
       const nextNative = {
@@ -47,15 +50,12 @@ export async function *createElementWithContext<C extends VContext, HO extends C
         reference: options.reference,
         options
       };
-      referenced.set(options.reference, nextNative);
       await options.context.set(options.reference, nextNative);
       return nextNative;
     }
-    if (isSourceReference(componentReference)) {
-      const possibleScalar = await options.context.get(componentReference);
-      if (isScalarVNode(possibleScalar)) {
-        return possibleScalar;
-      }
+    const scalar = await getScalar(options, componentReference);
+    if (scalar) {
+      return scalar;
     }
     const next: HydratableVNode<C, HO> = {
       reference: options.reference,
@@ -64,7 +64,6 @@ export async function *createElementWithContext<C extends VContext, HO extends C
       children: asyncExtendedIterable(generateChildren(options.context, options, children)).retain()
     };
     next.source = next;
-    referenced.set(next.reference, next);
     await options.context.set(next.reference, next);
     return next;
   }

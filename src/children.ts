@@ -1,6 +1,6 @@
 import { VContext, assertNonNative } from "./vcontext";
 import { ContextSourceOptions } from "./source-options";
-import { isVNode, VNode, VNodeRepresentation } from "./vnode";
+import { isVNode, VNode, VNodeRepresentation, getScalar } from "./vnode";
 import {
   getSourceReferenceDetail,
   isPromise,
@@ -33,7 +33,7 @@ export async function *generateChildrenVNodes<C extends VContext,  HO extends Co
     for await (const value of reference) {
       if (isSourceReference(value)) {
         await assertNonNative(context, value);
-        yield await context.get(value);
+        yield (await context.get(value) || await getScalar(options, value));
       } else {
         yield* generateChildrenVNodes(context, options, value);
       }
@@ -42,13 +42,13 @@ export async function *generateChildrenVNodes<C extends VContext,  HO extends Co
     for (const value of reference) {
       if (isSourceReference(value)) {
         await assertNonNative(context, value);
-        yield await context.get(value);
+        yield (await context.get(value) || await getScalar(options, value));
       } else {
         yield* generateChildrenVNodes(context, options, value);
       }
     }
   } else {
     await assertNonNative(context, reference);
-    yield await context.get(reference);
+    yield (await context.get(reference) || await getScalar(options, reference));
   }
 }
