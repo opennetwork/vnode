@@ -26,6 +26,10 @@ const native = {
 
 class DOMContext extends WeakVContext {
 
+  async isolate(reference) {
+    return super.isolate(reference, () => new DOMContext());
+  }
+
   async isNative(reference) {
     return !!native[reference];
   }
@@ -81,19 +85,19 @@ const html = htm.bind(h);
 
 const nodes = h(
   async function *() {
-    // console.log("Start");
-    // yield html`
-    //   <button onClick=${() => console.log("Clicked")} reference="first">
-    //     First
-    //   </button>
-    //   <button onClick=${() => console.log("Clicked")} reference="second">
-    //     Second
-    //   </button>
-    //   <button onClick=${() => console.log("Clicked")} reference="third">
-    //     Second
-    //   </button>
-    // `;
-    // console.log("Next will be an array");
+    console.log("Start");
+    yield html`
+      <button onClick=${() => console.log("Clicked")} reference="first">
+        First
+      </button>
+      <button onClick=${() => console.log("Clicked")} reference="second">
+        Second
+      </button>
+      <button onClick=${() => console.log("Clicked")} reference="third">
+        Second
+      </button>
+    `;
+    console.log("Next will be an array");
     yield [
       "A",
       "B",
@@ -103,15 +107,15 @@ const nodes = h(
     yield () => "fn";
     console.log("Next will be an async function");
     yield async () => "async fn";
-    // console.log("Next will be a node itself");
-    // yield* h(
-    //   async function *() {
-    //     yield "node result 1";
-    //     yield "node result 2";
-    //   },
-    //   {}
-    // );
-    // console.log("I'm done");
+    console.log("Next will be a node itself");
+    yield* h(
+      async function *() {
+        yield "node result 1";
+        yield "node result 2";
+      },
+      {}
+    );
+    console.log("I'm done");
   },
   {
 
@@ -122,7 +126,7 @@ const nodesIterator = nodes[Symbol.asyncIterator]();
 
 asyncExtendedIterable(nodesIterator)
   .forEach(async node => {
-    console.log("output", node ? { node, children: await asyncExtendedIterable(node.children).toArray() } : undefined);
+    console.log("output", node ? { ...node, children: await asyncExtendedIterable(node.children).toArray() } : undefined, node ? node === node.source : undefined);
   })
   .then(() => console.log("Complete"))
   .catch(console.error);

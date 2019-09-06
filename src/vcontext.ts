@@ -8,6 +8,8 @@ export interface VContext {
   isNative?: (reference: SourceReference) => Promise<boolean>;
   getNative?: (reference: SourceReference) => Promise<NativeVNode | undefined>;
 
+  isolate(reference: SourceReference): Promise<VContext>;
+
   get(reference: SourceReference): Promise<VNode>;
   set(reference: SourceReference, node: VNode): Promise<void>;
   remove(reference: SourceReference): Promise<void>;
@@ -16,11 +18,16 @@ export interface VContext {
 
 }
 
-interface WeakContextMap extends WeakMap<object, Map<SourceReference, VNode>> {
+interface WeakContextReference {
+  node?: VNode;
+  isolate?: VContext;
+}
+
+interface WeakContextMap extends WeakMap<object, Map<SourceReference, WeakContextReference>> {
 
 }
 
-const globalWeak: WeakContextMap = new WeakMap<object, Map<SourceReference, VNode>>();
+const globalWeak: WeakContextMap = new WeakMap<object, Map<SourceReference, WeakContextReference>>();
 
 export function isNativeVContext(context: VContext): context is VContext & { getNative: Function, isNative: Function } {
   return context && context.getNative instanceof Function && context.isNative instanceof Function;
@@ -31,7 +38,7 @@ export function isNativeVContext(context: VContext): context is VContext & { get
  * @param {object} reference
  * @returns {Map}
  */
-function getDOMContext(weak: WeakContextMap, reference: object) {
+function getWeakContext(weak: WeakContextMap, reference: object) {
   const result = weak.get(reference);
   if (result) {
     return result;
@@ -41,33 +48,58 @@ function getDOMContext(weak: WeakContextMap, reference: object) {
   return map;
 }
 
-const DOMContextReference = Symbol();
+const WeakVContextReference = Symbol();
 
 export class WeakVContext implements VContext {
 
-  private readonly [DOMContextReference]: object = {};
+  private [WeakVContextReference]: object = {};
   public readonly weak: WeakMap<object, any>;
 
   constructor(weak?: WeakMap<object, any>) {
     this.weak = weak || globalWeak;
   }
 
+  private async getWeakReference(reference: SourceReference): Promise<WeakContextReference> {
+    const context = getWeakContext(this.weak, this[WeakVContextReference]);
+    return context.get(reference) || {};
+  }
+
+  private async putWeakReference(reference: SourceReference, details: Partial<WeakContextReference>) {
+    const context = getWeakContext(this.weak, this[WeakVContextReference]);
+    context.set(reference, {
+      ...await this.getWeakReference(reference),
+      ...details
+    });
+  }
+
+  async isolate(reference: SourceReference, getIsolate?: () => VContext) {
+    const details = await this.getWeakReference(reference);
+    if (details.isolate) {
+      return details.isolate;
+    }
+    const isolate = getIsolate ? getIsolate() : new WeakVContext(new WeakMap<object, any>());
+    await this.putWeakReference(reference, {
+      isolate
+    });
+    return isolate;
+  }
+
   async set(reference: SourceReference, node: VNode) {
-    const context = getDOMContext(this.weak, this[DOMContextReference]);
-    context.set(reference, node);
+    await this.putWeakReference(reference, {
+      node
+    });
   }
 
   async remove(reference: SourceReference) {
-    const context = getDOMContext(this.weak, this[DOMContextReference]);
-    context.delete(reference);
+    await this.putWeakReference(reference, {
+      node: undefined
+    });
   }
 
   async get(reference: SourceReference): Promise<VNode | ScalarVNode> {
-    const context = getDOMContext(this.weak, this[DOMContextReference]);
-    console.log(context);
-    const result = context.get(reference);
-    if (isVNode(result)) {
-      return result;
+    const details = await this.getWeakReference(reference);
+    if (isVNode(details.node)) {
+      return details.node;
     }
     if (isNativeVContext(this)) {
       if (await this.isNative(reference)) {
@@ -100,7 +132,6 @@ export class WeakVContext implements VContext {
   }
 
   async clear() {
-    const context = getDOMContext(this.weak, this[DOMContextReference]);
-    context.clear();
+    this[WeakVContextReference] = {};
   }
 }

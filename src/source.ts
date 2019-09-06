@@ -103,7 +103,6 @@ export function isSyncSourceReferenceRepresentation(value: unknown): value is Sy
 }
 
 export function getSourceReferenceDetail<C extends VContext, O extends HydratedSourceOptions<C>>(context: C, source: Source<C, unknown>, options: O): SourceReferenceDetail {
-  console.log(source, options);
   if (!isSourceReference(source) && context.weak.has(source)) {
     const value = context.weak.get(source);
     if (isSourceReferenceDetail(value)) {

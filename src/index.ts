@@ -61,6 +61,16 @@ async function *flatten<C extends VContext, HO extends HydratedSourceOptions<C>>
   }
 }
 
+async function *flattenAndGet<C extends VContext, HO extends HydratedSourceOptions<C>>(context: C, node: unknown, options: HO): AsyncIterable<VNode> {
+  for await (const value of flatten(context, node, options)) {
+    if (!isSourceReference(value)) {
+      yield undefined;
+    } else {
+      yield await context.get(value);
+    }
+  }
+}
+
 async function *generateChildren<C extends VContext, HO extends HydratedSourceOptions<C>>(context: VContext, options: HO, children: Iterable<VNodeRepresentation> | SourceReferenceRepresentation | VNodeRepresentation): AsyncIterable<VNode["reference"]> {
   for await (const node of generateChildrenVNodes(context, options, children)) {
     yield isVNode(node) ? node.reference : undefined;
@@ -147,7 +157,7 @@ async function *hydrate<C extends VContext, HO extends HydratedSourceOptions<C>>
   let remove = new Set<SourceReference>();
 
   if (isVNode(componentReference)) {
-    return yield hydrateable(componentReference, referenced, remove);
+    return yield* flattenAndGet(context, componentReference, options);
   }
 
   async function hydrateVNode(componentReference: SourceReference, children: VNodeRepresentation): Promise<VNode | HydratableVNode<C, HO>> {
@@ -165,8 +175,7 @@ async function *hydrate<C extends VContext, HO extends HydratedSourceOptions<C>>
       await context.set(options.reference, nextNative);
       return nextNative;
     }
-    const current = await context.get(options.reference);
-    if (!current && isSourceReference(componentReference)) {
+    if (isSourceReference(componentReference)) {
       const possibleScalar = await context.get(componentReference);
       if (isScalarVNode(possibleScalar)) {
         return possibleScalar;
@@ -176,98 +185,12 @@ async function *hydrate<C extends VContext, HO extends HydratedSourceOptions<C>>
       reference: options.reference,
       source: undefined,
       options,
-      children: {
-        [Symbol.asyncIterator]: () => iterateChildren(
-          asyncExtendedIterable(current ? current.children : [])[Symbol.asyncIterator](),
-          generateChildren(context, options, children)[Symbol.asyncIterator]()
-        )[Symbol.asyncIterator]()
-      }
+      children: asyncExtendedIterable(generateChildren(context, options, children)).retain()
     };
     next.source = next;
     referenced.set(next.reference, next);
     await context.set(next.reference, next);
     return next;
-  }
-
-  async function *iterateChildren(left: AsyncIterator<SourceReference>, right: AsyncIterator<SourceReference>): AsyncIterable<SourceReference> {
-    let leftNext: IteratorResult<SourceReference>,
-      rightNext: IteratorResult<SourceReference>;
-    do {
-      [leftNext, rightNext] = await Promise.all([
-        getNext(left),
-        getNext(right)
-      ]);
-
-      if (rightNext.done) {
-        break;
-      }
-
-      const leftNode = isSourceReference(leftNext.value) ? await context.get(leftNext.value) : undefined;
-      const rightNode = isSourceReference(rightNext.value) ? await context.get(rightNext.value) : undefined;
-
-      if (leftNode && (!rightNode || leftNode.reference !== rightNode.reference)) {
-        remove.add(leftNode.reference);
-      }
-
-      const leftChildren = asyncIterator(leftNode ? leftNode.children : []);
-      const rightChildren = asyncIterator(rightNode ? rightNode.children : []);
-
-      // Drain all children, don't emit as we only want the top level children
-      await asyncDrain(iterateChildren(leftChildren, rightChildren));
-
-      if (!rightNode) {
-        yield undefined;
-        continue;
-      }
-
-      referenced.set(rightNode.reference, rightNode);
-      yield rightNode.reference;
-    } while (!rightNext.done);
-
-    for await (const leftReference of restLeft()) {
-      if (!isSourceReference(leftReference)) {
-        continue;
-      }
-      if (referenced.has(leftNext.value)) {
-        continue;
-      }
-      remove.add(leftNext.value);
-    }
-
-    if (left.return) {
-      await left.return();
-    }
-    if (right.return) {
-      await right.return();
-    }
-
-    async function *restLeft() {
-      while (!leftNext.done) {
-        leftNext = await getNext(left);
-        if (!isSourceReference(leftNext.value)) {
-          continue;
-        }
-        const leftNode = await context.get(leftNext.value);
-        if (!leftNode) {
-          yield leftNext.value; // Already been removed
-          continue;
-        }
-        yield* fromChildren(leftNode.children);
-        yield leftNext.value;
-      }
-
-      async function *fromChildren(children: AsyncIterable<SourceReference>): AsyncIterable<SourceReference> {
-        for await (const child of children) {
-          const childNode = await context.get(child);
-          if (!childNode) {
-            yield child;
-            continue;
-          }
-          yield* fromChildren(childNode.children);
-          yield child;
-        }
-      }
-    }
   }
 
   let vNode: VNode | AsyncIterable<VNode>;
@@ -287,61 +210,16 @@ async function *hydrate<C extends VContext, HO extends HydratedSourceOptions<C>>
       if (!isVNode(nextVNode)) {
         yield undefined;
       } else {
-        yield hydrateable(nextVNode, referenced, remove);
+        yield {
+          reference: Fragment,
+          children: flatten(context, nextVNode, options)
+        };
       }
     }
-  } else if (vNode) {
-    yield hydrateable(vNode, referenced, remove);
-  }
-
-  function hydrateable(node: VNode, referenced: Map<SourceReference, VNode>, remove: Set<SourceReference>): VNode {
-    if (!isVNode(node)) {
-      throw new Error("Received non VNode");
-    }
-    if (isScalarVNode(node)) {
-      return node;
-    }
-    async function *children(): AsyncIterable<SourceReference> {
-      for await (const child of node.children) {
-        if (!isSourceReference(child)) {
-          continue;
-        }
-        const vNode = await context.get(child);
-        if (!isVNode(vNode)) {
-          continue;
-        }
-        referenced.set(child, vNode);
-      }
-      let replacementNode: VNode = node;
-      for (const [reference, vNode] of referenced.entries()) {
-        if (!isSourceReference(reference) || !isVNode(vNode)) {
-          continue;
-        }
-        let returnedNode;
-        if (isHydratableVNode(context, vNode)) {
-          returnedNode = await context.hydrate(reference, isNativeVNode(vNode) ? vNode : vNode.source, context, isHydratableVNode(context, vNode) ? (vNode.options || options) : options);
-        } else {
-          returnedNode = await context.hydrate(reference, vNode, context, options);
-        }
-        referenced.set(returnedNode.reference, returnedNode);
-        if (options.reference === returnedNode.reference) {
-          replacementNode = returnedNode;
-        }
-      }
-      yield* flatten(context, replacementNode, options);
-      for (const toRemove of remove) {
-        if (referenced.has(toRemove)) {
-          continue;
-        }
-        await context.remove(toRemove);
-        remove.delete(toRemove);
-      }
-    }
-    return {
+  } else if (isVNode(vNode)) {
+    yield {
       reference: Fragment,
-      children: {
-        [Symbol.asyncIterator]: () => children()[Symbol.asyncIterator]()
-      }
+      children: flatten(context, vNode, options)
     };
   }
 
@@ -393,21 +271,22 @@ export function createHydrator<C extends VContext>(contextSource: C | AsyncItera
         ...additionalChildren
       ];
     }
+    const reference = options.reference || Symbol("Element");
     const baseHydratedOptions: O & HydratedSourceOptions<C> = {
       ...options,
-      reference: options.reference || Symbol("Element"),
-      context,
+      reference: reference,
+      context: await context.isolate(reference),
       children: []
     };
     const hydratedOptions: O & HydratedSourceOptions<C> = {
       ...baseHydratedOptions,
       children: generateChildren(context, baseHydratedOptions, allChildren)
     };
-    const reference = getSourceReferenceDetail(context, source, hydratedOptions);
+    const detail = getSourceReferenceDetail(context, source, hydratedOptions);
     if (!reference) {
       throw new Error("Unable to retrieve reference representation");
     }
-    for await (const node of hydrate(context, reference, hydratedOptions)) {
+    for await (const node of hydrate(context, detail, hydratedOptions)) {
       for await (const reference of flatten(context, node, hydratedOptions)) {
         yield await context.get(reference);
       }
