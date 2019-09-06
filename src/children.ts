@@ -1,6 +1,6 @@
 import { VContext, assertNonNative } from "./vcontext";
 import { ContextSourceOptions } from "./source-options";
-import { isVNode, VNode, VNodeRepresentation, getScalar } from "./vnode";
+import { isVNode, VNode, VNodeRepresentation, getScalar, isScalarVNode } from "./vnode";
 import {
   getSourceReferenceDetail,
   isPromise,
@@ -12,7 +12,11 @@ import { isAsyncIterable, isIterable } from "iterable";
 
 export async function *generateChildren<C extends VContext, HO extends ContextSourceOptions<C>>(context: VContext, options: HO, children: Iterable<VNodeRepresentation> | SourceReferenceRepresentation | VNodeRepresentation): AsyncIterable<VNode["reference"]> {
   for await (const node of generateChildrenVNodes(context, options, children)) {
-    yield isVNode(node) ? node.reference : undefined;
+    if (isScalarVNode(node)) {
+      yield node.value;
+    } else {
+      yield isVNode(node) ? node.reference : undefined;
+    }
   }
 }
 

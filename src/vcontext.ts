@@ -1,5 +1,6 @@
 import { SourceReference } from "./source";
 import { VNode, isVNode, ScalarVNode, NativeVNode } from "./vnode";
+import { asyncExtendedIterable } from "iterable";
 
 export interface VContext {
 
@@ -9,6 +10,7 @@ export interface VContext {
 
   isolate(reference: SourceReference): Promise<VContext>;
 
+  values(): AsyncIterable<VNode>;
   get(reference: SourceReference): Promise<VNode>;
   set(reference: SourceReference, node: VNode): Promise<void>;
   remove(reference: SourceReference): Promise<void>;
@@ -110,6 +112,14 @@ export class WeakVContext implements VContext {
   async clear() {
     this[WeakVContextReference] = {};
   }
+
+  values() {
+    const context = getWeakContext(this.weak, this[WeakVContextReference]);
+    return asyncExtendedIterable(context.values())
+      .map(({ node }) => node)
+      .filter(isVNode);
+  }
+
 }
 
 export async function assertNonNative(context: VContext, reference: SourceReference, message?: string): Promise<void> {

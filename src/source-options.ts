@@ -3,7 +3,7 @@ import { VNode } from "./vnode";
 import { SourceReference } from "./source";
 
 export interface SourceOptions<C extends VContext> {
-  context?: C;
+  context?: C | Promise<C>;
   children?: AsyncIterable<VNode>;
   reference?: SourceReference;
 }

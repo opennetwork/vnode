@@ -21,7 +21,7 @@ export function context<C extends VContext>(context: C) {
     const hydratedOptions: O & ContextSourceOptions<C> = {
       ...options,
       reference: reference,
-      context,
+      context: await (options.context || context),
       children
     };
     yield* createElementWithContext(source, hydratedOptions);

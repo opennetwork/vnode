@@ -85,7 +85,7 @@ const nodes = h(
     console.log("I'm done");
   },
   {
-    context: currentContext.isolate("root")
+
   }
 );
 
@@ -94,10 +94,7 @@ const nodesIterator = nodes[Symbol.asyncIterator]();
 asyncExtendedIterable(nodesIterator)
   .forEach(async node => {
     console.log("output", node ? { ...node, children: await asyncExtendedIterable(node.children).toArray() } : undefined, node ? node === node.source : undefined);
-    // if (node) {
-    //   const isolate = await currentContext.isolate("first");
-    //   console.log(await isolate.get("first"));
-    // }
   })
+  .then(async () => console.log(await asyncExtendedIterable(currentContext.values()).toArray()))
   .then(() => console.log("Complete"))
   .catch(console.error);
