@@ -68,7 +68,7 @@ export async function *createElementWithContext<C extends VContext, HO extends C
   };
 
   async function *generator(newReference: SourceReference, reference: IterableIterator<SourceReference> | AsyncIterableIterator<SourceReference>): AsyncIterableIterator<VNode> {
-    let next: IteratorResult<SourceReference> | Promise<IteratorResult<SourceReference>>;
+    let next: IteratorResult<SourceReference>;
     do {
       next = await getNext(reference, newReference);
       if (next.done) {
