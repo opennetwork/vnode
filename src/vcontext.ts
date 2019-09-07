@@ -9,7 +9,7 @@ export interface Tree {
 
 export interface VContext {
 
-  weak: WeakMap<object, unknown>;
+  weak?: WeakMap<object, unknown>;
   isNative?: (reference: SourceReference) => Promise<boolean>;
   getNative?: (reference: SourceReference) => Promise<NativeVNode | undefined>;
   hydrate?: (node: VNode, tree?: Tree) => Promise<void>;
