@@ -18,6 +18,9 @@ export async function hydrate<C extends VContext>(context: C, node: VNode) {
   // This will continue until there are no more generated children for a node
   //
   // This allows values to be hydrated every time there is a new set of children instance
+  //
+  // At a top level this means that if we still have children being generated, we're still
+  // going to be waiting for it to complete
   await asyncExtendedIterable(node.children)
     .forEach(nextChildren => (
       asyncExtendedIterable(nextChildren).forEach(child => hydrate(context, child))
