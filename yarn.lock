@@ -152,20 +152,20 @@ inherits@2:
   integrity sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==
 
 iterable-h@./:
-  version "5.0.0"
+  version "5.3.1"
   dependencies:
-    iterable "^4.3.0"
+    iterable "^5.1.0"
     iterable-h "./"
 
-iterable@^4.3.0:
-  version "4.3.0"
-  resolved "https://registry.npmjs.org/iterable/-/iterable-4.3.0.tgz#b98c6e5b667c3297af506188e15fa40ad1ba93cf"
-  integrity sha512-tW1DtahiQk2rIkW+8gVOYnsx1ITTm+e/Zvh6G1aLNMJcVU8oR67EamqyUGVa4jVy7YFE2+jJB2McYMGOJ+asQQ==
+iterable@^5.1.0:
+  version "5.1.0"
+  resolved "https://registry.npmjs.org/iterable/-/iterable-5.1.0.tgz#d797b56a5c61fcf4950adea5dd3521abdf0e405d"
+  integrity sha512-D8SGKGfEP5fSoyHtxbcMqOWdgfX7gk89OLp65ULGljusITM8fpgoTuVUqy09ZtQonNniwiQyf18JWAS4kMOYyQ==
 
-iterable@^4.4.0:
-  version "4.4.0"
-  resolved "https://registry.npmjs.org/iterable/-/iterable-4.4.0.tgz#f2a089a069ed3b5880830723c7ebabca607db00e"
-  integrity sha512-IGzLKfUZce5puB6BbN5sMqV1IpDD4iUSSBp/1byQjsNrTwIa/iCKCtAsn5uyNMnapgkodum3fBfEHsbaqFDHlw==
+iterable@^5.2.0:
+  version "5.2.0"
+  resolved "https://registry.npmjs.org/iterable/-/iterable-5.2.0.tgz#0f22efa2b5cc5a5571a31302a5de64f03bbab9c9"
+  integrity sha512-PP60Nc4PftIe42wE7+BQv12W3voR2BNz6B4Q6JYO+0i6pqQr1tVBp7xtEDEabjQdrHktl4mCVsAraqCIt354zg==
 
 js-tokens@^4.0.0:
   version "4.0.0"

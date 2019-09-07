@@ -26,7 +26,7 @@ export async function *createElement<C extends VContext, O extends SourceOptions
     ...options,
     context,
     reference: options.reference || Symbol("Element"),
-    children: asyncExtendedIterable(children)
+    children: asyncExtendedIterable(children).toIterable()
   };
   yield* createElementWithContext(source, hydratedOptions);
 }

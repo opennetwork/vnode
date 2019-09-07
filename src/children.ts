@@ -10,14 +10,14 @@ import {
   isIterableIterator,
   getNext,
   isTransientAsyncIteratorSource,
-  TransientAsyncIteratorSource
+  TransientAsyncIteratorSource, asyncIterator
 } from "iterable";
 import { flatten } from "./flatten";
 
 export function children<HO extends ContextSourceOptions<any>>(options: HO, initialSource?: AsyncIterableLike<VNodeRepresentation>): AsyncIterable<AsyncIterable<VNode>> {
   // Weak because a generator can create more generators that we may have no reference to
   const generators = new WeakMap<VNode, {
-    source: TransientAsyncIteratorSource<VNode>,
+    source: IterableIterator<VNode> | AsyncIterableIterator<VNode>,
     iterator: AsyncIterator<VNode>
   }>();
   const generatorValues = new WeakMap<VNode, VNode>();
@@ -32,7 +32,8 @@ export function children<HO extends ContextSourceOptions<any>>(options: HO, init
           continue;
         }
         const generator = generators.get(value);
-        if (!generator) {
+        if (!generator || (isTransientAsyncIteratorSource(generator.source) && !generator.source.open)) {
+          generators.set(value, undefined);
           // It has finished, but no values left, return its final value
           yield generatorValues.get(value);
           continue;
@@ -53,7 +54,7 @@ export function children<HO extends ContextSourceOptions<any>>(options: HO, init
         // by giving a source that finishes (e.g. has a fixed number of values)
         //
         // The user can swap to a source if they wish using setSource
-        if (!generator.source.inFlight && !generator.source.hasSource) {
+        if (isTransientAsyncIteratorSource(generator.source) && (!generator.source.inFlight && !generator.source.hasSource)) {
           yield generatorValues.get(value);
           continue;
         }
@@ -71,12 +72,12 @@ export function children<HO extends ContextSourceOptions<any>>(options: HO, init
         baseSource.close();
       }
     }
-    return asyncExtendedIterable(generate(sources)).retain();
+    return asyncExtendedIterable(generate(sources)).retain().toIterable();
   });
   // Because the base source is retained, it means that it can be replayed in the exact same order
   //
   // The values for each "cycle" are also retained, meaning that everything from an external point of view is static
-  return asyncExtendedIterable(baseSource).retain();
+  return asyncExtendedIterable(baseSource).retain().toIterable();
 
   async function flatMapSource(node: VNodeRepresentation): Promise<AsyncIterable<VNode>>  {
     if (isPromise(node)) {
@@ -86,10 +87,9 @@ export function children<HO extends ContextSourceOptions<any>>(options: HO, init
       const referenceNode = {
         reference: Symbol("Iterable Iterator")
       };
-      const generatorSource = isTransientAsyncIteratorSource(node) ? node : source(node);
       generators.set(referenceNode, {
-        source: generatorSource,
-        iterator: generatorSource[Symbol.asyncIterator]()
+        source: node,
+        iterator: asyncIterator(node)
       });
       return asyncExtendedIterable([referenceNode]);
     }

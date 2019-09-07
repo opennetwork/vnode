@@ -31,7 +31,17 @@ export async function *createElementWithContext<C extends VContext, HO extends C
     return yield* flatten(source);
   }
 
+
   if (isSourceReference(source)) {
+    const native = options.context.getNative ? await options.context.getNative(source) : undefined;
+    if (isNativeVNode(native)) {
+      return yield {
+        ...native,
+        reference: options.reference,
+        options
+      };
+    }
+
     return yield {
       reference: options.reference,
       scalar: true,
@@ -47,15 +57,6 @@ export async function *createElementWithContext<C extends VContext, HO extends C
     return yield {
       reference: Fragment,
       children: children(options, asyncExtendedIterable(source).map(value => createElementWithContext(value, options)))
-    };
-  }
-
-  const native = options.context.getNative ? await options.context.getNative(source) : undefined;
-  if (isNativeVNode(native)) {
-    return yield {
-      ...native,
-      reference: options.reference,
-      options
     };
   }
 

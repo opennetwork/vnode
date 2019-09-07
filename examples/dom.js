@@ -1,4 +1,4 @@
-import { WeakVContext, withContext } from "../dist";
+import { WeakVContext, withContext, hydrate } from "../dist";
 import { asyncExtendedIterable } from "iterable";
 import htm from "htm";
 
@@ -7,13 +7,15 @@ class NativeVNode  {
   constructor(reference) {
     this.reference = reference;
     this.native = true;
-    this.children = asyncExtendedIterable([]);
     this.hydrated = new WeakMap();
   }
 
   async hydrate(node, options) {
+    if (this.hydrated.has(options)) {
+      return;
+    }
+    this.hydrated.set(options, {});
     console.log("NATIVE HYDRATE", this.reference, node.reference, options);
-    return this;
   }
 
 }
@@ -33,7 +35,7 @@ class DOMContext extends WeakVContext {
   }
 
   async getNative(reference) {
-    if (!await this.isNative(reference)) {
+    if (!native[reference]) {
       return undefined;
     }
     return {
@@ -41,6 +43,12 @@ class DOMContext extends WeakVContext {
       native: true,
       reference: Symbol("Native Instance")
     };
+  }
+
+  async hydrate(node) {
+    if (node.native && node.source && node.options) {
+      return node.source.hydrate(node, node.options);
+    }
   }
 
 }
@@ -91,8 +99,9 @@ const nodes = h(
 const nodesIterator = nodes[Symbol.asyncIterator]();
 
 asyncExtendedIterable(nodesIterator)
-  .forEach(async node => {
-    console.log("output", node);
+  .forEach(async value => {
+    console.log(value);
+    await hydrate(currentContext, value);
   })
   .then(() => console.log("Complete"))
-  .catch(console.error);
+  .catch(error => console.error({ error }));
