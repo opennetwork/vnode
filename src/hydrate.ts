@@ -39,8 +39,6 @@ export async function hydrate<C extends VContext>(context: C, node: VNode, tree?
       // We want those vnodes to be as weakly referenced as possible because
       // they're just a state snapshot
       const nextTree: Tree = {
-        // Force this to be an iterable, as we don't want it to be mutated
-        // but also, forces the
         children: Object.freeze(
           childrenArray
             .map(child => child ? child.reference : undefined)
