@@ -1,58 +1,60 @@
-import { VContext, assertNonNative } from "./vcontext";
 import { ContextSourceOptions } from "./source-options";
-import { isVNode, VNode, VNodeRepresentation, getScalar, isScalarVNode } from "./vnode";
+import { isScalarVNode, VNode, VNodeRepresentation } from "./vnode";
 import {
-  getSourceReferenceDetail,
-  isPromise,
-  isSourceReference,
-  isSourceReferenceDetail,
-  SourceReferenceRepresentation
+  isIterableIterator,
+  isPromise
 } from "./source";
-import { isAsyncIterable, isIterable } from "iterable";
+import { asyncExtendedIterable, AsyncIterableLike, isAsyncIterable, isIterable, source } from "iterable";
+import { getNext } from "./retry-iterator";
+import { flatten } from "./flatten";
 
-export async function *generateChildren<C extends VContext, HO extends ContextSourceOptions<C>>(context: VContext, options: HO, children: Iterable<VNodeRepresentation> | SourceReferenceRepresentation | VNodeRepresentation): AsyncIterable<VNode["reference"]> {
-  for await (const node of generateChildrenVNodes(context, options, children)) {
-    if (isScalarVNode(node)) {
-      yield node.value;
-    } else {
-      yield isVNode(node) ? node.reference : undefined;
-    }
-  }
-}
+export function children<HO extends ContextSourceOptions<any>>(options: HO, initialSource?: AsyncIterableLike<VNodeRepresentation>): AsyncIterable<AsyncIterable<VNode>> {
+  // Weak because a generator can create more generators that we may have no reference to
+  const generators = new WeakMap<VNode, AsyncIterator<VNode>>();
+  const sources = asyncExtendedIterable(initialSource || options.children).flatMap(flatMapSource).retain();
+  return asyncExtendedIterable(
+    source(async (): Promise<AsyncIterable<VNode>> => {
+      async function *generate(sources: AsyncIterable<VNode>): AsyncIterable<VNode | undefined> {
+        for await (const value of sources) {
+          if (isScalarVNode(value) || !value || !generators.has(value)) {
+            yield* flatten(value);
+            continue;
+          }
+          const generator = generators.get(value);
+          if (!generator) {
+            // It has finished, but no values left
+            yield undefined;
+            continue;
+          }
+          // This function is only ever going to be invoked once, and it has to
+          // be in order
+          const result = await getNext(generator);
+          if (result.done) {
+            generators.set(value, undefined);
+            yield undefined;
+            continue;
+          }
+          yield* generate(await flatMapSource(result.value));
+        }
+      }
+      return asyncExtendedIterable(generate(sources)).retain();
+    })
+  ).retain();
 
-export async function *generateChildrenVNodes<C extends VContext,  HO extends ContextSourceOptions<C>>(context: VContext, options: HO, children: Iterable<VNodeRepresentation> | SourceReferenceRepresentation | VNodeRepresentation): AsyncIterable<VNode> {
-  const detail = getSourceReferenceDetail(context, children, options);
-  if (!isSourceReferenceDetail(detail)) {
-    return yield undefined;
-  }
-  let reference = detail.reference;
-  if (isPromise(reference)) {
-    reference = await reference;
-  }
-  if (isVNode(reference)) {
-    await assertNonNative(context, reference.reference);
-    return yield reference;
-  }
-  if (isAsyncIterable(reference)) {
-    for await (const value of reference) {
-      if (isSourceReference(value)) {
-        await assertNonNative(context, value);
-        yield (await context.get(value) || await getScalar(options, value));
-      } else {
-        yield* generateChildrenVNodes(context, options, value);
-      }
+  async function flatMapSource(node: VNodeRepresentation): Promise<AsyncIterable<VNode>>  {
+    if (isPromise(node)) {
+      return flatMapSource(await node);
     }
-  } else if (isIterable(reference)) {
-    for (const value of reference) {
-      if (isSourceReference(value)) {
-        await assertNonNative(context, value);
-        yield (await context.get(value) || await getScalar(options, value));
-      } else {
-        yield* generateChildrenVNodes(context, options, value);
-      }
+    if (isIterableIterator(node)) {
+      const referenceNode = {
+        reference: Symbol("Iterable Iterator Child")
+      };
+      generators.set(referenceNode, source(node)[Symbol.asyncIterator]());
+      return asyncExtendedIterable([referenceNode]);
     }
-  } else {
-    await assertNonNative(context, reference);
-    yield (await context.get(reference) || await getScalar(options, reference));
+    if (!(isIterable(node) || isAsyncIterable(node))) {
+      return asyncExtendedIterable([node]);
+    }
+    return flatMapSource(node);
   }
 }

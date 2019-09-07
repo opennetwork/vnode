@@ -4,11 +4,12 @@ import { SourceReference } from "./source";
 
 export interface SourceOptions<C extends VContext> {
   context?: C | Promise<C>;
-  children?: AsyncIterable<VNode>;
+  children?: AsyncIterable<VNode | undefined>;
   reference?: SourceReference;
 }
 
 export interface ContextSourceOptions<C extends VContext> extends SourceOptions<C> {
   readonly context: C;
-  readonly children: AsyncIterable<VNode>;
+  readonly children: AsyncIterable<VNode | undefined>;
+  readonly reference: SourceReference;
 }

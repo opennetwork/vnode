@@ -1,4 +1,4 @@
-import { WeakVContext, context } from "../dist";
+import { WeakVContext, withContext } from "../dist";
 import { asyncExtendedIterable } from "iterable";
 import htm from "htm";
 
@@ -47,7 +47,7 @@ class DOMContext extends WeakVContext {
 }
 
 const currentContext = new DOMContext();
-const h = context(currentContext);
+const h = withContext(currentContext);
 const html = htm.bind(h);
 
 const nodes = h(
@@ -93,8 +93,7 @@ const nodesIterator = nodes[Symbol.asyncIterator]();
 
 asyncExtendedIterable(nodesIterator)
   .forEach(async node => {
-    console.log("output", node ? { ...node, children: await asyncExtendedIterable(node.children).toArray() } : undefined, node ? node === node.source : undefined);
+    console.log("output", node);
   })
-  .then(async () => console.log(await asyncExtendedIterable(currentContext.values()).toArray()))
   .then(() => console.log("Complete"))
   .catch(console.error);

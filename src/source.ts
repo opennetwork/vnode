@@ -103,12 +103,6 @@ export function isSyncSourceReferenceRepresentation(value: unknown): value is Sy
 }
 
 export function getSourceReferenceDetail<C extends VContext, O extends ContextSourceOptions<C>>(context: C, source: Source<C, unknown>, options: O): SourceReferenceDetail {
-  if (!isSourceReference(source) && context.weak.has(source)) {
-    const value = context.weak.get(source);
-    if (isSourceReferenceDetail(value)) {
-      return value;
-    }
-  }
   if (source instanceof Function) {
     const reference = source({
       ...options
@@ -130,6 +124,5 @@ export function getSourceReferenceDetail<C extends VContext, O extends ContextSo
   if (!isSourceReferenceDetail(detail)) {
     return undefined;
   }
-  context.weak.set(source, detail);
   return detail;
 }

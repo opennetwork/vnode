@@ -1,96 +1,74 @@
 import { VContext } from "./vcontext";
 import { ContextSourceOptions } from "./source-options";
 import {
-  getSourceReferenceDetail,
   isIterableIterator,
-  isPromise, isSourceReference,
-  isSourceReferenceDetail,
+  isPromise,
+  isSourceReference,
   SourceReference,
-  SourceReferenceDetail,
-  SourceReferenceRepresentation,
   Source
 } from "./source";
 import {
-  getScalar,
-  HydratableVNode,
   isNativeVNode,
-  isScalarVNode,
   isVNode,
-  ScalarVNode,
-  VNode,
-  VNodeRepresentation
+  VNode
 } from "./vnode";
 import { asyncExtendedIterable, isAsyncIterable, isIterable } from "iterable";
-import { flattenAndGet } from "./flatten";
-import { generateChildren, generateChildrenVNodes } from "./children";
+import { flatten } from "./flatten";
+import { children } from "./children";
 import { getNext } from "./retry-iterator";
+import { Fragment } from "./fragment";
 
-export async function *createElementWithContext<C extends VContext, HO extends ContextSourceOptions<C>>(source: Source<C, unknown> | SourceReferenceDetail, options: HO): AsyncIterable<VNode | undefined> {
-  const detail = isSourceReferenceDetail(source) ? source : getSourceReferenceDetail(options.context, source, options);
-
-  if (!isSourceReferenceDetail(detail)) {
-    return yield undefined;
+export async function *createElementWithContext<C extends VContext, HO extends ContextSourceOptions<C>>(source: Source<C, unknown>, options: HO): AsyncIterable<VNode> {
+  if (source instanceof Function) {
+    const nextSource = source({
+      ...options
+    });
+    return yield* createElementWithContext(nextSource, options);
   }
 
-  let componentReference: SourceReferenceRepresentation = detail.reference;
-
-  if (isPromise(componentReference)) {
-    componentReference = await componentReference;
+  if (isPromise(source)) {
+    source = await source;
   }
 
-  if (isVNode(componentReference)) {
-    return yield* flattenAndGet(options.context, componentReference, options);
+  if (isVNode(source)) {
+    return yield* flatten(source);
   }
 
-  async function hydrateVNode(componentReference: SourceReference, children: VNodeRepresentation): Promise<VNode | HydratableVNode<C, HO> | ScalarVNode> {
-    const native = options.context.getNative ? await options.context.getNative(componentReference) : undefined;
-    if (isNativeVNode(native)) {
-      const nextNative = {
-        ...native,
-        reference: options.reference,
-        options
-      };
-      await options.context.set(options.reference, nextNative);
-      return nextNative;
-    }
-    const scalar = await getScalar(options, componentReference);
-    if (scalar) {
-      return scalar;
-    }
-    const next: HydratableVNode<C, HO> = {
+  if (isSourceReference(source)) {
+    return yield {
       reference: options.reference,
-      source: undefined,
-      options,
-      children: asyncExtendedIterable(generateChildren(options.context, options, children)).retain()
+      scalar: true,
+      source: source
     };
-    next.source = next;
-    await options.context.set(next.reference, next);
-    return next;
   }
 
-  let vNode: VNode | AsyncIterable<VNode>;
-
-  const iterable = isIterable(componentReference) || isAsyncIterable(componentReference);
-
-  if (isSourceReference(componentReference)) {
-    vNode = await hydrateVNode(componentReference, options.children);
-  } else if (iterable && !isIterableIterator(componentReference)) {
-    vNode = await hydrateVNode(options.reference, asyncExtendedIterable(generateChildrenVNodes(options.context, options, componentReference)).retain());
-  } else if (iterable && isIterableIterator(componentReference)) {
-    vNode = generator(Symbol("Iterable Iterator"), componentReference);
+  if (isIterableIterator(source)) {
+    return yield* generator(Symbol("Iterable Iterator"), source);
   }
 
-  if (isAsyncIterable(vNode)) {
-    for await (const nextVNode of vNode) {
-      if (!isVNode(nextVNode)) {
-        yield undefined;
-      } else {
-        yield* flattenAndGet(options.context, nextVNode, options);
-      }
-    }
-  } else if (isVNode(vNode)) {
-    yield* flattenAndGet(options.context, vNode, options);
+  if (isIterable(source) || isAsyncIterable(source)) {
+    return yield {
+      reference: Fragment,
+      children: asyncExtendedIterable(source).map(value => createElementWithContext(value, options))
+    };
   }
+
+  const native = options.context.getNative ? await options.context.getNative(source) : undefined;
+  if (isNativeVNode(native)) {
+    return yield {
+      ...native,
+      reference: options.reference,
+      options
+    };
+  }
+
+  // asyncExtendedIterable(generateChildren(options.context, options, children)).retain()
+  return yield {
+    reference: options.reference,
+    source,
+    options,
+    children: children(options)
+  };
 
   async function *generator(newReference: SourceReference, reference: IterableIterator<SourceReference> | AsyncIterableIterator<SourceReference>): AsyncIterableIterator<VNode> {
     let next: IteratorResult<SourceReference> | Promise<IteratorResult<SourceReference>>;
@@ -99,8 +77,7 @@ export async function *createElementWithContext<C extends VContext, HO extends C
       if (next.done) {
         break;
       }
-      const detail = getSourceReferenceDetail(options.context, next.value, options);
-      yield* createElementWithContext(detail, options);
+      yield* createElementWithContext(next.value, options);
     } while (!next.done);
   }
 }
