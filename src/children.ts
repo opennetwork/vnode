@@ -52,7 +52,7 @@ export function children<HO extends ContextSourceOptions<any>>(options: HO, init
         // The user can provide initial values for a pushable
         // by giving a source that finishes (e.g. has a fixed number of values)
         //
-        // The user can swap to a source if they wish using replaceSource
+        // The user can swap to a source if they wish using setSource
         if (!generator.source.inFlight && !generator.source.hasSource) {
           yield generatorValues.get(value);
           continue;
