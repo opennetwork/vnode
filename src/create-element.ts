@@ -45,7 +45,8 @@ export async function *createElementWithContext<C extends VContext, HO extends C
     return yield {
       reference: options.reference,
       scalar: true,
-      source: source
+      source: source,
+      options
     };
   }
 
