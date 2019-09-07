@@ -46,7 +46,7 @@ export async function *createElementWithContext<C extends VContext, HO extends C
   if (isIterable(source) || isAsyncIterable(source)) {
     return yield {
       reference: Fragment,
-      children: asyncExtendedIterable(source).map(value => createElementWithContext(value, options))
+      children: children(options, asyncExtendedIterable(source).map(value => createElementWithContext(value, options)))
     };
   }
 
@@ -59,7 +59,6 @@ export async function *createElementWithContext<C extends VContext, HO extends C
     };
   }
 
-  // asyncExtendedIterable(generateChildren(options.context, options, children)).retain()
   return yield {
     reference: options.reference,
     source,

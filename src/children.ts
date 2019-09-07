@@ -51,6 +51,8 @@ export function children<HO extends ContextSourceOptions<any>>(options: HO, init
         //
         // The user can provide initial values for a pushable
         // by giving a source that finishes (e.g. has a fixed number of values)
+        //
+        // The user can swap to a source if they wish using replaceSource
         if (!generator.source.inFlight && !generator.source.hasSource) {
           yield generatorValues.get(value);
           continue;
@@ -58,7 +60,7 @@ export function children<HO extends ContextSourceOptions<any>>(options: HO, init
         const result = await getNext(generator.iterator);
         if (result.done) {
           generators.set(value, undefined);
-          yield undefined;
+          yield generatorValues.get(value);
           continue;
         }
         generatorValues.set(value, result.value);
@@ -82,7 +84,7 @@ export function children<HO extends ContextSourceOptions<any>>(options: HO, init
     }
     if (isIterableIterator(node)) {
       const referenceNode = {
-        reference: Symbol("Iterable Iterator Child")
+        reference: Symbol("Iterable Iterator")
       };
       const generatorSource = isTransientAsyncIteratorSource(node) ? node : source(node);
       generators.set(referenceNode, {
