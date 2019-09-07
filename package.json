@@ -13,7 +13,7 @@
   },
   "peerDependencies": {},
   "dependencies": {
-    "iterable": "^4.3.0",
+    "iterable": "^4.4.0",
     "iterable-h": "./"
   },
   "repository": {

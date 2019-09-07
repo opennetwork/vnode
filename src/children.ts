@@ -53,7 +53,7 @@ export function children<HO extends ContextSourceOptions<any>>(options: HO, init
             yield undefined;
             continue;
           }
-          generatorValues.set(value, result.value)
+          generatorValues.set(value, result.value);
           yield* generate(await flatMapSource(result.value));
         }
       }

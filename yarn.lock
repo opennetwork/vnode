@@ -154,18 +154,18 @@ inherits@2:
 iterable-h@./:
   version "5.0.0"
   dependencies:
-    iterable "^4.2.0"
+    iterable "^4.3.0"
     iterable-h "./"
-
-iterable@^4.2.0:
-  version "4.2.0"
-  resolved "https://registry.npmjs.org/iterable/-/iterable-4.2.0.tgz#5a3817ea24003316ec50ef669b0b52c393b69241"
-  integrity sha512-wSAVtwSyFIuAQCQ9hCRWPsCOYFKALZNqSc+QOmGUoUs74MK9N2hwNDNSX54rgn27MIgRbz2+4/PjaJkcA4Owhw==
 
 iterable@^4.3.0:
   version "4.3.0"
   resolved "https://registry.npmjs.org/iterable/-/iterable-4.3.0.tgz#b98c6e5b667c3297af506188e15fa40ad1ba93cf"
   integrity sha512-tW1DtahiQk2rIkW+8gVOYnsx1ITTm+e/Zvh6G1aLNMJcVU8oR67EamqyUGVa4jVy7YFE2+jJB2McYMGOJ+asQQ==
+
+iterable@^4.4.0:
+  version "4.4.0"
+  resolved "https://registry.npmjs.org/iterable/-/iterable-4.4.0.tgz#f2a089a069ed3b5880830723c7ebabca607db00e"
+  integrity sha512-IGzLKfUZce5puB6BbN5sMqV1IpDD4iUSSBp/1byQjsNrTwIa/iCKCtAsn5uyNMnapgkodum3fBfEHsbaqFDHlw==
 
 js-tokens@^4.0.0:
   version "4.0.0"
