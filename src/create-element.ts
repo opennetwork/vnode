@@ -1,8 +1,6 @@
 import { VContext } from "./vcontext";
 import { ContextSourceOptions } from "./source-options";
 import {
-  isIterableIterator,
-  isPromise,
   isSourceReference,
   SourceReference,
   Source
@@ -12,10 +10,9 @@ import {
   isVNode,
   VNode
 } from "./vnode";
-import { asyncExtendedIterable, isAsyncIterable, isIterable } from "iterable";
+import { asyncExtendedIterable, isAsyncIterable, isIterable, isPromise, isIterableIterator, getNext } from "iterable";
 import { flatten } from "./flatten";
 import { children } from "./children";
-import { getNext } from "./retry-iterator";
 import { Fragment } from "./fragment";
 
 export async function *createElementWithContext<C extends VContext, HO extends ContextSourceOptions<C>>(source: Source<C, unknown>, options: HO): AsyncIterable<VNode> {

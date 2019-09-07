@@ -1,16 +1,26 @@
 import { ContextSourceOptions } from "./source-options";
 import { isScalarVNode, VNode, VNodeRepresentation } from "./vnode";
 import {
+  asyncExtendedIterable,
+  AsyncIterableLike,
+  isAsyncIterable,
+  isIterable,
+  source,
+  isPromise,
   isIterableIterator,
-  isPromise
-} from "./source";
-import { asyncExtendedIterable, AsyncIterableLike, isAsyncIterable, isIterable, source } from "iterable";
-import { getNext } from "./retry-iterator";
+  getNext,
+  isTransientAsyncIteratorSource,
+  TransientAsyncIteratorSource
+} from "iterable";
 import { flatten } from "./flatten";
 
 export function children<HO extends ContextSourceOptions<any>>(options: HO, initialSource?: AsyncIterableLike<VNodeRepresentation>): AsyncIterable<AsyncIterable<VNode>> {
   // Weak because a generator can create more generators that we may have no reference to
-  const generators = new WeakMap<VNode, AsyncIterator<VNode>>();
+  const generators = new WeakMap<VNode, {
+    source: TransientAsyncIteratorSource<VNode>,
+    iterator: AsyncIterator<VNode>
+  }>();
+  const generatorValues = new WeakMap<VNode, VNode>();
   const sources = asyncExtendedIterable(initialSource || options.children).flatMap(flatMapSource).retain();
   return asyncExtendedIterable(
     source(async (): Promise<AsyncIterable<VNode>> => {
@@ -26,14 +36,24 @@ export function children<HO extends ContextSourceOptions<any>>(options: HO, init
             yield undefined;
             continue;
           }
-          // This function is only ever going to be invoked once, and it has to
-          // be in order
-          const result = await getNext(generator);
+          // If there are no inflight and we don't have a source
+          // then continue with the current value
+          //
+          // This allows users to provide a TransientAsyncIteratorSource instance
+          // directly which allows _pushing_ values rather than pulling
+          //
+          // If the user doesn't provide this source, we just wait for the next value
+          if (!generator.source.inFlight && !generator.source.hasSource) {
+            yield generatorValues.get(value);
+            continue;
+          }
+          const result = await getNext(generator.iterator);
           if (result.done) {
             generators.set(value, undefined);
             yield undefined;
             continue;
           }
+          generatorValues.set(value, result.value)
           yield* generate(await flatMapSource(result.value));
         }
       }
@@ -49,7 +69,11 @@ export function children<HO extends ContextSourceOptions<any>>(options: HO, init
       const referenceNode = {
         reference: Symbol("Iterable Iterator Child")
       };
-      generators.set(referenceNode, source(node)[Symbol.asyncIterator]());
+      const generatorSource = isTransientAsyncIteratorSource(node) ? node : source(node);
+      generators.set(referenceNode, {
+        source: generatorSource,
+        iterator: generatorSource[Symbol.asyncIterator]()
+      });
       return asyncExtendedIterable([referenceNode]);
     }
     if (!(isIterable(node) || isAsyncIterable(node))) {

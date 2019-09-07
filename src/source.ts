@@ -1,4 +1,4 @@
-import { AsyncIterableLike, isAsyncIterable, isIterable } from "iterable";
+import { AsyncIterableLike, isAsyncIterable, isIterable, isPromise, isIterableIterator } from "iterable";
 import { SourceOptions, ContextSourceOptions } from "./source-options";
 import { VContext } from "./vcontext";
 import { isVNode, VNodeRepresentation } from "./vnode";
@@ -51,30 +51,6 @@ export function isSourceReferenceDetail(value: unknown): value is SourceReferenc
   return (
     isAsyncSourceReferenceDetail(value) ||
     isSyncSourceReferenceDetail(value)
-  );
-}
-
-export function isIterableIterator(value: unknown): value is (IterableIterator<any> | AsyncIterableIterator<any>)  {
-  function isIteratorLike(value: unknown): value is { next?: unknown } {
-    return typeof value === "object";
-  }
-  return (
-    isIteratorLike(value) &&
-    value.next instanceof Function &&
-    (
-      isAsyncIterable(value) ||
-      isIterable(value)
-    )
-  );
-}
-
-export function isPromise<T = unknown>(value: unknown): value is Promise<T> {
-  function isPromiseLike(value: unknown): value is { then?: unknown } {
-    return typeof value === "object";
-  }
-  return (
-    isPromiseLike(value) &&
-    value.then instanceof Function
   );
 }
 
