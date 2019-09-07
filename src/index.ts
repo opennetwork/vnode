@@ -15,6 +15,7 @@ export * from "./source";
 export * from "./source-options";
 export * from "./vcontext";
 export * from "./vnode";
+export * from "./hydrate";
 
 export async function *createElement<C extends VContext, O extends SourceOptions<C>>(source: Source<C, O>, options?: O, ...children: VNodeRepresentation[]): AsyncIterable<VNode> {
   const context = await options.context;

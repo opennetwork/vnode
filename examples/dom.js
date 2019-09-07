@@ -39,8 +39,7 @@ class DOMContext extends WeakVContext {
     return {
       source: native[reference],
       native: true,
-      reference: Symbol("Native Instance"),
-      children: asyncExtendedIterable([])
+      reference: Symbol("Native Instance")
     };
   }
 

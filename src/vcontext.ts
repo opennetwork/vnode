@@ -1,18 +1,30 @@
 import { SourceReference } from "./source";
-import { NativeVNode } from "./vnode";
+import { NativeVNode, VNode } from "./vnode";
 
 export interface VContext {
 
   weak: WeakMap<object, unknown>;
   isNative?: (reference: SourceReference) => Promise<boolean>;
   getNative?: (reference: SourceReference) => Promise<NativeVNode | undefined>;
+  hydrate?: (node: VNode) => Promise<void>;
 
 }
 
 const globalWeak = new WeakMap<object, unknown>();
 
 export function isNativeVContext(context: VContext): context is VContext & { getNative: Function, isNative: Function } {
-  return context && context.getNative instanceof Function && context.isNative instanceof Function;
+  return (
+    context &&
+    typeof context.getNative === "function" &&
+    typeof context.isNative === "function"
+  );
+}
+
+export function isHydratingVContext(context: VContext): context is VContext & { hydrate: Function } {
+  return (
+    context &&
+    typeof context.hydrate === "function"
+  );
 }
 
 export class WeakVContext implements VContext {
