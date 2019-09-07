@@ -10,7 +10,7 @@ import {
   isIterableIterator,
   getNext,
   isTransientAsyncIteratorSource,
-  TransientAsyncIteratorSource, asyncIterator
+  asyncIterator
 } from "iterable";
 import { flatten } from "./flatten";
 
