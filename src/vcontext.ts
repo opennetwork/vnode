@@ -1,12 +1,18 @@
 import { SourceReference } from "./source";
 import { NativeVNode, VNode } from "./vnode";
 
+export interface Tree {
+  reference: SourceReference;
+  children: ReadonlyArray<SourceReference>;
+  parent?: Tree;
+}
+
 export interface VContext {
 
   weak: WeakMap<object, unknown>;
   isNative?: (reference: SourceReference) => Promise<boolean>;
   getNative?: (reference: SourceReference) => Promise<NativeVNode | undefined>;
-  hydrate?: (node: VNode) => Promise<void>;
+  hydrate?: (node: VNode, tree?: Tree) => Promise<void>;
 
 }
 
