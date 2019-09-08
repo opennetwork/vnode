@@ -6,7 +6,6 @@ import {
   Source
 } from "./source";
 import {
-  isNativeVNode,
   isVNode,
   VNode
 } from "./vnode";
@@ -40,15 +39,6 @@ export async function *createElementWithContext<C extends VContext, HO extends C
   }
 
   if (isSourceReference(source)) {
-    const native = options.context.getNative ? await options.context.getNative(source) : undefined;
-    if (isNativeVNode(native)) {
-      return yield {
-        ...native,
-        reference: options.reference,
-        options
-      };
-    }
-
     return yield {
       reference: options.reference,
       scalar: true,

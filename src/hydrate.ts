@@ -1,5 +1,5 @@
-import { isHydratingVContext, VContext, Tree } from "./vcontext";
-import { isHydratableVNode, isHydratedVNode, isScalarVNode, VNode } from "./vnode";
+import { VContext, Tree } from "./vcontext";
+import { VNode } from "./vnode";
 import { asyncExtendedIterable } from "iterable";
 
 export async function hydrateChildren<C extends VContext>(context: C, node: VNode, tree?: Tree) {
@@ -42,11 +42,8 @@ export async function hydrateChildren<C extends VContext>(context: C, node: VNod
 }
 
 export async function hydrate<C extends VContext>(context: C, node: VNode, tree?: Tree) {
-  if (!isHydratingVContext(context)) {
+  if (!context.hydrate) {
     return; // Nothing to do, can never hydrate
-  }
-  if (!(context.isHydratableVNode ? await context.isHydratableVNode(node) : isHydratableVNode(context, node))) {
-    return node.children ? hydrateChildren(context, node, tree) : undefined;
   }
   return context.hydrate(node, tree, node.children ? () => hydrateChildren(context, node, tree) : undefined);
 }
