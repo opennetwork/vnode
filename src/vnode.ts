@@ -88,7 +88,10 @@ export function isNativeVNode(value: unknown): value is NativeVNode {
     value.native === true &&
     (
       !value.source ||
-      isVNode(value.source)
+      (
+        isVNode(value.source) ||
+        isSourceReference(value.source)
+      )
     )
   );
 }
