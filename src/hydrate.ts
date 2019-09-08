@@ -46,7 +46,7 @@ export async function hydrate<C extends VContext>(context: C, node: VNode, tree?
     return; // Nothing to do, can never hydrate
   }
   if (!(context.isHydratableVNode ? await context.isHydratableVNode(node) : isHydratableVNode(context, node))) {
-    return hydrateChildren(context, node, tree);
+    return node.children ? hydrateChildren(context, node, tree) : undefined;
   }
-  return context.hydrate(node, tree, () => hydrateChildren(context, node, tree));
+  return context.hydrate(node, tree, node.children ? () => hydrateChildren(context, node, tree) : undefined);
 }
