@@ -37,7 +37,7 @@ export type VNodeRepresentation = SyncVNode | AsyncVNode | Iterable<SyncVNode | 
 
 export function isVNode(value: unknown): value is VNode {
   function isVNodeLike(value: unknown): value is { reference?: unknown, children?: unknown } {
-    return typeof value === "function" && typeof value === "object";
+    return typeof value === "function" || typeof value === "object";
   }
   return (
     isVNodeLike(value) &&
