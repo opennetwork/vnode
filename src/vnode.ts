@@ -25,7 +25,6 @@ export interface ScalarVNode extends VNode {
 
 export interface NativeVNode extends VNode {
   native: true;
-  source?: VNode;
 }
 
 export interface HydratedVNode extends VNode {
