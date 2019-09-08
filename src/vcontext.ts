@@ -15,7 +15,7 @@ export interface VContext {
   getNative?: (reference: SourceReference) => Promise<NativeVNode | undefined>;
   isHydratableVNode?: (node: VNode) => Promise<boolean>;
   createElement?: <O extends ContextSourceOptions<this>>(source: Source<this, O>, options: O) => undefined | AsyncIterable<VNode>;
-  children?: <O extends ContextSourceOptions<this>>(children: AsyncIterable<VNode>, options: O) => undefined | AsyncIterable<VNode>;
+  children?: <O extends ContextSourceOptions<this>>(children: AsyncIterable<VNodeRepresentation>, options: O) => undefined | AsyncIterable<VNode>;
   hydrate?: (node: VNode, tree?: Tree, hydrateChildren?: () => Promise<void>) => Promise<void>;
 
 }

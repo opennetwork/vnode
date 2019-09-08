@@ -8,7 +8,7 @@ import {
   VNodeRepresentation
 } from "./vnode";
 import { createElementWithContext } from "./create-element";
-import { asyncExtendedIterable } from "iterable";
+import { asyncExtendedIterable, isAsyncIterable, isIterable } from "iterable";
 
 export * from "./fragment";
 export * from "./source";
@@ -25,8 +25,10 @@ export async function *createElement<C extends VContext, O extends SourceOptions
   const hydratedOptions: ContextSourceOptions<C> = {
     ...options,
     context,
-    reference: options.reference || Symbol("Element"),
-    children: asyncExtendedIterable(children).toIterable()
+    reference: (options || {}).reference || Symbol("Element"),
+    children: asyncExtendedIterable((options || {}).children || children)
+      .flatMap(child => (isIterable(child) || isAsyncIterable(child)) ? child : [child])
+      .toIterable()
   };
   yield* createElementWithContext(source, hydratedOptions);
 }
@@ -35,7 +37,7 @@ export function withContext<C extends VContext>(context: C) {
   return async function *createElementWithContext<O extends SourceOptions<C>>(source: Source<C, O>, options?: O, ...children: VNodeRepresentation[]): AsyncIterable<VNode> {
     yield* createElement(source, {
       ...options,
-      context: options.context || context
-    });
+      context: (options || {}).context || context
+    }, ...children);
   };
 }

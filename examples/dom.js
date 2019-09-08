@@ -1,5 +1,5 @@
 import { WeakVContext, withContext, hydrate } from "../dist";
-import { asyncExtendedIterable } from "iterable";
+import { asyncExtendedIterable, source } from "iterable";
 import htm from "htm";
 
 class NativeVNode  {
@@ -60,35 +60,96 @@ const html = htm.bind(h);
 
 const nodes = h(
   async function *() {
-    console.log("Start");
-    yield html`
-      <button onClick=${() => console.log("Clicked")} reference="first">
-        First
-      </button>
-      <button onClick=${() => console.log("Clicked")} reference="second">
-        Second
-      </button>
-      <button onClick=${() => console.log("Clicked")} reference="third">
-        Second
-      </button>
-    `;
-    console.log("Next will be an array");
-    yield [
-      "A",
-      "B",
-      "C"
-    ];
-    console.log("Next will be a function");
-    yield () => "fn";
-    console.log("Next will be an async function");
-    yield async () => "async fn";
-    console.log("Next will be a node itself");
+    // console.log("Start");
+    // yield html`
+    //   <button onClick=${() => console.log("Clicked")} reference="first">
+    //     First
+    //   </button>
+    //   <button onClick=${() => console.log("Clicked")} reference="second">
+    //     Second
+    //   </button>
+    //   <button onClick=${() => console.log("Clicked")} reference="third">
+    //     Second
+    //   </button>
+    // `;
+    // console.log("Next will be an array");
+    // yield [
+    //   "A",
+    //   "B",
+    //   "C"
+    // ];
+    // console.log("Next will be a function");
+    // yield () => "fn";
+    // console.log("Next will be an async function");
+    // yield async () => "async fn";
+    // console.log("Next will be a node itself");
     yield* h(
-      async function *() {
+      async function *({ children }) {
         yield "node result 1";
         yield "node result 2";
+
+        // const nextSource = source();
+        //
+        // let count = 0;
+        // let interval = setInterval(() => {
+        //   count += 1;
+        //   nextSource.push(`next interval ${count}`);
+        //   if (count > 2) {
+        //     nextSource.close();
+        //   }
+        // }, 1000);
+        //
+        // yield* nextSource;
+        //
+        // clearInterval(interval);
+
+        yield* children;
       },
-      {}
+      {},
+      [
+        h(
+          async function *() {
+            yield "node result 4";
+            yield "node result 5";
+
+            const nextSource = source();
+
+            let count = 0;
+            let interval = setInterval(() => {
+              count += 1;
+              nextSource.push(`next interval 2 ${count}`);
+              if (count > 2) {
+                nextSource.close();
+              }
+            }, 1000);
+
+            yield* nextSource;
+
+            clearInterval(interval);
+          }
+        ),
+        h(
+          async function *() {
+            yield "node result 6";
+            yield "node result 7";
+
+            const nextSource = source();
+
+            let count = 0;
+            let interval = setInterval(() => {
+              count += 1;
+              nextSource.push(`next interval 3 ${count}`);
+              if (count > 2) {
+                nextSource.close();
+              }
+            }, 1000);
+
+            yield* nextSource;
+
+            clearInterval(interval);
+          }
+        )
+      ]
     );
     console.log("I'm done");
   },

@@ -14,7 +14,7 @@ export async function *flatten<C extends VContext, HO extends ContextSourceOptio
   if (node.reference !== Fragment) {
     return yield node;
   }
-  for await (const reference of node.children) {
-    yield* flatten(reference);
+  for await (const child of node.children) {
+    yield* flatten(child);
   }
 }

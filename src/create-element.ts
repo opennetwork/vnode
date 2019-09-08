@@ -39,7 +39,6 @@ export async function *createElementWithContext<C extends VContext, HO extends C
     return yield* flatten(source);
   }
 
-
   if (isSourceReference(source)) {
     const native = options.context.getNative ? await options.context.getNative(source) : undefined;
     if (isNativeVNode(native)) {
