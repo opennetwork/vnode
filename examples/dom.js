@@ -45,10 +45,11 @@ class DOMContext extends WeakVContext {
     };
   }
 
-  async hydrate(node) {
+  async hydrate(node, tree, children) {
     if (node.native && node.source && node.options) {
       return node.source.hydrate(node, node.options);
     }
+    return children();
   }
 
 }

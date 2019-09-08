@@ -16,6 +16,14 @@ import { children } from "./children";
 import { Fragment } from "./fragment";
 
 export async function *createElementWithContext<C extends VContext, HO extends ContextSourceOptions<C>>(source: Source<C, unknown>, options: HO): AsyncIterable<VNode> {
+  // Allow entire function to be replaced if needed
+  if (options.context.createElement) {
+    const result = options.context.createElement(source, options);
+    if (result) {
+      return yield* result;
+    }
+  }
+
   if (source instanceof Function) {
     const nextSource = source({
       ...options

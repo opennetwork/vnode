@@ -1,5 +1,6 @@
-import { SourceReference } from "./source";
-import { NativeVNode, VNode } from "./vnode";
+import { Source, SourceReference } from "./source";
+import { NativeVNode, VNode, VNodeRepresentation } from "./vnode";
+import { ContextSourceOptions } from "./source-options";
 
 export interface Tree {
   reference: SourceReference;
@@ -12,7 +13,10 @@ export interface VContext {
   weak?: WeakMap<object, unknown>;
   isNative?: (reference: SourceReference) => Promise<boolean>;
   getNative?: (reference: SourceReference) => Promise<NativeVNode | undefined>;
-  hydrate?: (node: VNode, tree?: Tree) => Promise<void>;
+  isHydratableVNode?: (node: VNode) => Promise<boolean>;
+  createElement?: <O extends ContextSourceOptions<this>>(source: Source<this, O>, options: O) => undefined | AsyncIterable<VNode>;
+  children?: <O extends ContextSourceOptions<this>>(children: AsyncIterable<VNode>, options: O) => undefined | AsyncIterable<VNode>;
+  hydrate?: (node: VNode, tree?: Tree, hydrateChildren?: () => Promise<void>) => Promise<void>;
 
 }
 
