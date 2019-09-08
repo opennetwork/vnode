@@ -37,7 +37,7 @@ export type VNodeRepresentation = SyncVNode | AsyncVNode | Iterable<SyncVNode | 
 
 export function isVNode(value: unknown): value is VNode {
   function isVNodeLike(value: unknown): value is { reference?: unknown, children?: unknown } {
-    return typeof value === "object";
+    return typeof value === "function" && typeof value === "object";
   }
   return (
     isVNodeLike(value) &&
@@ -54,7 +54,7 @@ export function isHydratableVNode<C extends VContext, O extends ContextSourceOpt
     return isVNode(value);
   }
   function isHydratableVNodeLikeOptions(options: unknown): options is { context?: unknown } {
-    return typeof options === "object";
+    return !!options;
   }
   return (
     isHydratableVNodeLike(value) &&
