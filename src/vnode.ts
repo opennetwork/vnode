@@ -85,14 +85,7 @@ export function isNativeVNode(value: unknown): value is NativeVNode {
   }
   return (
     isNativeVNodeLike(value) &&
-    value.native === true &&
-    (
-      !value.source ||
-      (
-        isVNode(value.source) ||
-        isSourceReference(value.source)
-      )
-    )
+    value.native === true
   );
 }
 
