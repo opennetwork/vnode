@@ -1,21 +1,45 @@
-import { Source, SourceReference } from "./source";
+import { Source } from "./source";
 import { VNode, VNodeRepresentation } from "./vnode";
 import { ContextSourceOptions } from "./source-options";
 import { VContextEvents } from "./vcontext-events";
+import { Tree } from "./tree";
 
-export interface Tree {
-  reference: SourceReference;
-  children: ReadonlyArray<SourceReference>;
-  parent?: Tree;
-}
-
+/**
+ * A {@link VContext} is a way for an implementor to provide "global" functionality
+ *
+ * A {@link VContext} can be bound to a {@link VNode} using {@link withContext}, {@link createVNode}, or {@link createVNodeWithContext}
+ *
+ * Any {@link VContext} can hydrate {@link VNode} instances, irregardless of what {@link VContext} it was bound to during creation
+ * this allows contexts to segregate based on the values provided by {@link VNode} directly
+ */
 export interface VContext {
 
   events?: VContextEvents<this>;
 
   weak?: WeakMap<object, unknown>;
+  /**
+   * This function is invoked during {@link createVNodeWithContext}, it allows a {@link VContext} to override this functionality
+   *
+   * If no value is returned then {@link createVNodeWithContext} will continue as normal
+   * @param source
+   * @param options
+   */
   createVNode?: <O extends ContextSourceOptions<this>>(source: Source<this, O>, options: O) => undefined | AsyncIterable<VNode>;
+  /**
+   * This function is invoked during {@link children}, it allows a {@link VContext} to override this functionality
+   *
+   * If no value is returned then {@link children} will continue as normal
+   * @param source
+   * @param options
+   */
   children?: <O extends ContextSourceOptions<this>>(children: AsyncIterable<VNodeRepresentation>, options: O) => undefined | AsyncIterable<VNode>;
+  /**
+   * This function is invoked by {@link hydrate}
+   *
+   * The functionality provided by this function is up to the implementation
+   * @param node
+   * @param tree
+   */
   hydrate?: (node: VNode, tree?: Tree) => Promise<void>;
 
 }

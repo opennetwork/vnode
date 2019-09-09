@@ -2,7 +2,7 @@ import { VContext } from "./vcontext";
 import { Source } from "./source";
 import { ContextSourceOptions } from "./source-options";
 import { VNode, VNodeRepresentation } from "./vnode";
-import { Tree } from "./vcontext";
+import { Tree } from "./tree";
 
 export interface VContextHydrateEvent<C extends VContext> {
   node: VNode;

@@ -14,10 +14,10 @@ import {
   TransientAsyncIteratorSource
 } from "iterable";
 
-type GeneratorDetails = {
-  source: IterableIterator<VNode> | AsyncIterableIterator<VNode>,
-  iterator: AsyncIterator<VNode>
-};
+interface GeneratorDetails {
+  source: IterableIterator<VNode> | AsyncIterableIterator<VNode>;
+  iterator: AsyncIterator<VNode>;
+}
 
 export function children<HO extends ContextSourceOptions<any>>(options: HO, initialSource?: AsyncIterableLike<VNodeRepresentation>): AsyncIterable<AsyncIterable<VNode>> {
   if (typeof options.context.children === "function") {
@@ -156,27 +156,31 @@ export function children<HO extends ContextSourceOptions<any>>(options: HO, init
 
     // If we didn't get anything new, wait for it
     if (!isFirst && !anyChanges && changingSources.length) {
-      return waitForChanges(changingSources);
+      await waitForChanges(changingSources);
+      return nextValuesFromSource(false);
     }
 
     return asyncExtendedIterable(results).retain().toIterable();
   }
 
-  async function waitForChanges(sources: TransientAsyncIteratorSource[]): Promise<AsyncIterable<VNode>> {
-    const iterators = sources.map(source => source[Symbol.asyncIterator]());
+}
 
-    // If any of these iterators have a next value, we're good to go
-    await Promise.race(
-      iterators.map(iterator => iterator.next())
-    );
+/**
+ * Waits for a value from any of the available iterables
+ *
+ * @param sources
+ */
+async function waitForChanges(sources: TransientAsyncIteratorSource[]): Promise<void> {
+  const iterators = sources.map(source => source[Symbol.asyncIterator]());
 
-    // Cancel all subscriptions
-    await Promise.all(
-      iterators.map(iterator => iterator.return())
-    );
+  // If any of these iterators have a next value, we're good to go
+  await Promise.race(
+    iterators.map(iterator => iterator.next())
+  );
 
-    // Let the values move forward
-    return nextValuesFromSource(false);
-  }
-
+  // Cancel all iterators, we no longer are going to utilise them
+  // This allows TransientAsyncIteratorSource to ignore us
+  await Promise.all(
+    iterators.map(iterator => iterator.return())
+  );
 }
