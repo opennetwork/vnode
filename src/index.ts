@@ -7,17 +7,20 @@ import {
   VNode,
   VNodeRepresentation
 } from "./vnode";
-import { createElementWithContext } from "./create-element";
+import { createVNodeWithContext } from "./create-node";
 import { asyncExtendedIterable, isAsyncIterable, isIterable } from "iterable";
 
 export * from "./fragment";
 export * from "./source";
 export * from "./source-options";
 export * from "./vcontext";
+export * from "./vcontext-weak";
 export * from "./vnode";
 export * from "./hydrate";
+export * from "./children";
+export * from "./create-node";
 
-export async function *createElement<C extends VContext, O extends SourceOptions<C>>(source: Source<C, O>, options?: O, ...children: VNodeRepresentation[]): AsyncIterable<VNode> {
+export async function *createVNode<C extends VContext, O extends SourceOptions<C>>(source: Source<C, O>, options?: O, ...children: VNodeRepresentation[]): AsyncIterable<VNode> {
   const context = await options.context;
   if (!context) {
     throw new Error("Context is required, please provide it at the top level using withContext");
@@ -30,12 +33,12 @@ export async function *createElement<C extends VContext, O extends SourceOptions
       .flatMap(child => (isIterable(child) || isAsyncIterable(child)) ? child : [child])
       .toIterable()
   };
-  yield* createElementWithContext(source, hydratedOptions);
+  yield* createVNodeWithContext(source, hydratedOptions);
 }
 
 export function withContext<C extends VContext>(context: C) {
-  return async function *createElementWithContext<O extends SourceOptions<C>>(source: Source<C, O>, options?: O, ...children: VNodeRepresentation[]): AsyncIterable<VNode> {
-    yield* createElement(source, {
+  return async function *createNodeWithContext<O extends SourceOptions<C>>(source: Source<C, O>, options?: O, ...children: VNodeRepresentation[]): AsyncIterable<VNode> {
+    yield* createVNode(source, {
       ...options,
       context: (options || {}).context || context
     }, ...children);

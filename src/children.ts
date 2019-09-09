@@ -21,7 +21,7 @@ type GeneratorDetails = {
 };
 
 export function children<HO extends ContextSourceOptions<any>>(options: HO, initialSource?: AsyncIterableLike<VNodeRepresentation>): AsyncIterable<AsyncIterable<VNode>> {
-  if (options.context.children) {
+  if (typeof options.context.children === "function") {
     // Allow children process to be skipped
     const result = options.context.children(asyncExtendedIterable(initialSource || options.children).toIterable(), options);
     if (result) {

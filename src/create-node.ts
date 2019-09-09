@@ -14,9 +14,9 @@ import { flatten } from "./flatten";
 import { children } from "./children";
 import { Fragment } from "./fragment";
 
-export async function *createElementWithContext<C extends VContext, HO extends ContextSourceOptions<C>>(source: Source<C, unknown>, options: HO): AsyncIterable<VNode> {
+export async function *createVNodeWithContext<C extends VContext, HO extends ContextSourceOptions<C>>(source: Source<C, unknown>, options: HO): AsyncIterable<VNode> {
   // Allow entire function to be replaced if needed
-  if (options.context.createElement) {
+  if (typeof options.context.createElement === "function") {
     const result = options.context.createElement(source, options);
     if (result) {
       return yield* result;
@@ -27,7 +27,7 @@ export async function *createElementWithContext<C extends VContext, HO extends C
     const nextSource = source({
       ...options
     });
-    return yield* createElementWithContext(nextSource, options);
+    return yield* createVNodeWithContext(nextSource, options);
   }
 
   if (isPromise(source)) {
@@ -54,7 +54,7 @@ export async function *createElementWithContext<C extends VContext, HO extends C
   if (isIterable(source) || isAsyncIterable(source)) {
     return yield {
       reference: Fragment,
-      children: children(options, asyncExtendedIterable(source).map(value => createElementWithContext(value, options)))
+      children: children(options, asyncExtendedIterable(source).map(value => createVNodeWithContext(value, options)))
     };
   }
 
@@ -72,7 +72,7 @@ export async function *createElementWithContext<C extends VContext, HO extends C
       if (next.done) {
         break;
       }
-      yield* createElementWithContext(next.value, options);
+      yield* createVNodeWithContext(next.value, options);
     } while (!next.done);
   }
 }
