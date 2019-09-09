@@ -15,6 +15,7 @@ export * from "./source";
 export * from "./source-options";
 export * from "./vcontext";
 export * from "./vcontext-weak";
+export * from "./vcontext-events";
 export * from "./vnode";
 export * from "./hydrate";
 export * from "./children";
