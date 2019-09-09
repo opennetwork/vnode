@@ -20,7 +20,7 @@ import { Fragment } from "./fragment";
  *
  * The provided {@link VContext} may override this functionality, possibly resulting in a {@link NativeVNode}
  *
- * The special case to point out here is if the source is an {@link IterableIterator} (see {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#Is_a_generator_object_an_iterator_or_an_iterable})
+ * The special case to point out here is if the source is an `IterableIterator` (see {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#Is_a_generator_object_an_iterator_or_an_iterable})
  * then each iteration will result in a new {@link VNode} being created
  *
  * @param source
@@ -32,7 +32,7 @@ export async function *createVNodeWithContext<C extends VContext, HO extends Con
    *
    * This is where a context would inject its native types
    *
-   * The result returned is either going to be an {@link AsyncIterable} or `undefined`
+   * The result returned is either going to be an `AsyncIterable` or `undefined`
    *
    * If it is `undefined` the context is indicating that we can continue as normal
    */
@@ -91,7 +91,7 @@ export async function *createVNodeWithContext<C extends VContext, HO extends Con
   }
 
   /**
-   * Here is our nice {@link IterableIterator} that allows us to produce multiple versions for the same source
+   * Here is our nice `IterableIterator` that allows us to produce multiple versions for the same source
    *
    * See {@link generator} for details
    */
@@ -100,9 +100,9 @@ export async function *createVNodeWithContext<C extends VContext, HO extends Con
   }
 
   /**
-   * This will cover {@link Array}, {@link Set}, {@link Map}, and anything else implementing {@link Iterable} or {@link AsyncIterable}
+   * This will cover `Array`, `Set`, `Map`, and anything else implementing `Iterable` or `AsyncIterable`
    *
-   * We will create a "Fragment" that holds our node state to grab later
+   * We will create a `Fragment` that holds our node state to grab later
    *
    * This _could_ be flattened using {@link flatten} if needed before it is used as a child
    */
@@ -134,11 +134,11 @@ export async function *createVNodeWithContext<C extends VContext, HO extends Con
   };
 
   /**
-   * Iterates through an {@link IterableIterator} to generate new {@link VNode} instances
+   * Iterates through an `IterableIterator` to generate new {@link VNode} instances
    *
    * This allows an implementor to decide when their node returns state, including pushing new values _as they arrive_
    *
-   * {@link getNext} provides an error boundary if the {@link IterableIterator} provides a `throw` function
+   * {@link getNext} provides an error boundary if the `IterableIterator` provides a `throw` function
    *
    * @param newReference
    * @param reference
