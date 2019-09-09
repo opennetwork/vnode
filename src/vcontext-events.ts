@@ -9,7 +9,7 @@ export interface VContextHydrateEvent<C extends VContext> {
   tree?: Tree;
 }
 
-export interface VContextCreateElementEvent<C extends VContext> {
+export interface VContextCreateVNodeEvent<C extends VContext> {
   source: Source<C, ContextSourceOptions<C>>;
   options: ContextSourceOptions<C>;
 }
@@ -21,7 +21,7 @@ export interface VContextChildrenEvent<C extends VContext> {
 
 export interface VContextEvents<C extends VContext> {
 
-  createElement?: AsyncIterable<VContextCreateElementEvent<C>>;
+  createVNode?: AsyncIterable<VContextCreateVNodeEvent<C>>;
   children?: AsyncIterable<VContextChildrenEvent<C>>;
   hydrate?: AsyncIterable<VContextHydrateEvent<C>>;
   

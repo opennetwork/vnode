@@ -13,7 +13,6 @@ import {
   asyncIterator,
   TransientAsyncIteratorSource
 } from "iterable";
-import { flatten } from "./flatten";
 
 type GeneratorDetails = {
   source: IterableIterator<VNode> | AsyncIterableIterator<VNode>,
@@ -98,7 +97,7 @@ export function children<HO extends ContextSourceOptions<any>>(options: HO, init
 
       const promises = staticSources.map(async function* (value): AsyncIterable<VNode> {
         if (isScalarVNode(value) || !value || !generators.has(value)) {
-          return yield* flatten(value);
+          return yield value;
         }
         const generator = generators.get(value);
         if (!generator || (isTransientAsyncIteratorSource(generator.source) && !generator.source.open)) {
@@ -107,21 +106,23 @@ export function children<HO extends ContextSourceOptions<any>>(options: HO, init
           return yield* generatorValues.get(value);
         }
         anyGenerators = true;
-        // If there are no in flight and we don't have a source
-        // then continue with the current value
-        //
-        // This allows users to provide a TransientAsyncIteratorSource instance
-        // directly which allows _pushing_ values rather than pulling
-        //
-        // If the user doesn't provide this source, we just wait for the next value
-        //
-        // If the generator hasn't received any values yet, the returned
-        // value for this child will be undefined, which is expected
-        //
-        // The user can provide initial values for a pushable
-        // by giving a source that finishes (e.g. has a fixed number of values)
-        //
-        // The user can swap to a source if they wish using setSource
+        /**
+         * This allows users to provide a TransientAsyncIteratorSource instance
+         * directly which allows _pushing_ values rather than pulling
+         *
+         * If there are no in flight and we don't have a source
+         * then continue with the current value
+         *
+         * If the user doesn't provide this source, we just wait for the next value
+         *
+         * If the generator hasn't received any values yet, the returned
+         * value for this child will be undefined, which is expected
+         *
+         * The user can provide initial values for a pushable
+         * by giving a source that finishes (e.g. has a fixed number of values)
+         *
+         * The user can swap to a source if they wish using setSource
+         */
         if (isTransientAsyncIteratorSource(generator.source) && (!generator.source.inFlight && !generator.source.hasSource)) {
           // Return our reference node, so we can look it up again before we finish this cycle
           changingSources.push(generator.source);

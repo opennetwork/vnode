@@ -14,8 +14,8 @@ export interface VContext {
   events?: VContextEvents<this>;
 
   weak?: WeakMap<object, unknown>;
-  createElement?: <O extends ContextSourceOptions<this>>(source: Source<this, O>, options: O) => undefined | AsyncIterable<VNode>;
+  createVNode?: <O extends ContextSourceOptions<this>>(source: Source<this, O>, options: O) => undefined | AsyncIterable<VNode>;
   children?: <O extends ContextSourceOptions<this>>(children: AsyncIterable<VNodeRepresentation>, options: O) => undefined | AsyncIterable<VNode>;
-  hydrate?: (node: VNode, tree?: Tree, hydrateChildren?: () => Promise<void>) => Promise<void>;
+  hydrate?: (node: VNode, tree?: Tree) => Promise<void>;
 
 }

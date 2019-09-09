@@ -9,7 +9,8 @@
     "build": "tsc --declaration && npm run tslint",
     "watch": "tsc -w",
     "tslint": "tslint -c tslint.json -p tsconfig.json",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "documentation": "typedoc --out ./documentation ./src --excludePrivate --theme minimal --mode file --excludeNotExported"
   },
   "peerDependencies": {},
   "dependencies": {
@@ -24,6 +25,7 @@
     "esm": "^3.2.25",
     "htm": "^2.2.1",
     "tslint": "^5.19.0",
+    "typedoc": "^0.15.0",
     "typescript": "^3.6.2"
   }
 }
