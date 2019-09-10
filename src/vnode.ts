@@ -15,7 +15,7 @@ export interface VNode {
    */
   reference: SourceReference;
   /**
-   * An {@link AsyncIterable} that will return a {@link AsyncIterable<VNode>} that represents a group of children
+   * An `AsyncIterable` that will return a `AsyncIterable<VNode>` that represents a group of children
    *
    * Each iteration represents an update to the {@link VNode}'s children state
    */
