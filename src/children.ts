@@ -46,7 +46,9 @@ export function children<HO extends ContextSourceOptions<any>>(options: HO, init
    * If it is `undefined` the context is indicating that we can continue as normal
    */
   if (typeof options.context.children === "function") {
-    // Allow children process to be skipped
+    /**
+     * Allow children process to be skipped
+     */
     const result = options.context.children(asyncExtendedIterable(initialSource || options.children).toIterable(), options);
     if (result) {
       return result;
@@ -223,7 +225,9 @@ export function children<HO extends ContextSourceOptions<any>>(options: HO, init
         const generator = generators.get(value);
         if (!generator || (isTransientAsyncIteratorSource(generator.source) && !generator.source.open)) {
           generators.set(value, undefined);
-          // It has finished, but no values left, return its final value
+          /**
+           * It has finished, but no values left, return its final value
+           */
           return yield* generatorValues.get(value);
         }
 
@@ -250,7 +254,9 @@ export function children<HO extends ContextSourceOptions<any>>(options: HO, init
          * The user can swap to a source if they wish using setSource
          */
         if (isTransientAsyncIteratorSource(generator.source) && (!generator.source.inFlight && !generator.source.hasSource)) {
-          // Return our reference node, so we can look it up again before we finish this cycle
+          /**
+           * Return our reference node, so we can look it up again before we finish this cycle
+           */
           changingSources.push(generator.source);
           return yield value;
         }

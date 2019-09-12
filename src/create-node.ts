@@ -103,8 +103,6 @@ export async function *createVNodeWithContext<C extends VContext, HO extends Con
    * This will cover `Array`, `Set`, `Map`, and anything else implementing `Iterable` or `AsyncIterable`
    *
    * We will create a `Fragment` that holds our node state to grab later
-   *
-   * This _could_ be flattened using {@link flatten} if needed before it is used as a child
    */
   if (isIterable(source) || isAsyncIterable(source)) {
     return yield {
@@ -114,10 +112,9 @@ export async function *createVNodeWithContext<C extends VContext, HO extends Con
   }
 
   /**
-   * Allows for `undefined
+   * Allows for `undefined`, an empty `VNode`
    */
   if (!source) {
-    // Empty VNode
     return yield undefined;
   }
 

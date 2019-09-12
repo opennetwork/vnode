@@ -78,7 +78,7 @@ export async function hydrateChildren(context: VContext, node: VNode, tree?: Tre
  */
 export async function hydrate(context: VContext, node: VNode, tree?: Tree) {
   if (!context.hydrate) {
-    return; // Nothing to do, can never hydrate
+    return;
   }
   return context.hydrate(node, tree);
 }
