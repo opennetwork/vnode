@@ -1,5 +1,5 @@
 import { AsyncIterableLike } from "iterable";
-import { VNode, VNodeRepresentationSource } from "./vnode";
+import { FragmentVNode, VNode, VNodeRepresentationSource } from "./vnode";
 
 /**
  * A scalar source reference, this could be either referencing a {@link NativeVNode} or referencing direct source
@@ -20,7 +20,7 @@ export type SourceReferenceRepresentation<O extends object> = AsyncSourceReferen
 /**
  * A function that resolves to a {@link SourceReferenceRepresentation} which can be further processed to obtain a group of {@link SourceReference} values
  */
-export type SourceReferenceRepresentationFactory<O extends object> = (options: O, children: AsyncIterable<AsyncIterable<VNode>>) => SourceReferenceRepresentation<O>;
+export type SourceReferenceRepresentationFactory<O extends object> = (options: O, children: FragmentVNode) => SourceReferenceRepresentation<O>;
 /**
  * A value that represents a {@link SourceReference}
  */

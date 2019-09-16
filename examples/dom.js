@@ -1,4 +1,4 @@
-import { WeakVContext, withContext, hydrate, hydrateChildren } from "../dist";
+import {WeakVContext, withContext, hydrate, hydrateChildren, Fragment} from "../dist";
 import { asyncExtendedIterable, source } from "iterable";
 import htm from "htm";
 
@@ -46,7 +46,7 @@ class DOMContext extends WeakVContext {
   }
 
   async hydrate(node, tree) {
-    console.log("hydrate", { node });
+    console.log("hydrate", { node, tree });
     if (this.weak.has(node)) {
       return;
     }
@@ -65,29 +65,29 @@ const html = htm.bind(h);
 
 const nodes = h(
   async function *() {
-    console.log("Start");
-    yield html`
-      <button onClick=${() => console.log("Clicked")} reference="first">
-        First
-      </button>
-      <button onClick=${() => console.log("Clicked")} reference="second">
-        Second
-      </button>
-      <button onClick=${() => console.log("Clicked")} reference="third">
-        Third
-      </button>
-    `;
-    console.log("Next will be an array");
-    yield [
-      "A",
-      "B",
-      "C"
-    ];
-    console.log("Next will be a function");
-    yield () => "fn";
-    console.log("Next will be an async function");
-    yield async () => "async fn";
-    console.log("Next will be a node itself");
+    // console.log("Start");
+    // yield html`
+    //   <button onClick=${() => console.log("Clicked")} reference="first">
+    //     First
+    //   </button>
+    //   <button onClick=${() => console.log("Clicked")} reference="second">
+    //     Second
+    //   </button>
+    //   <button onClick=${() => console.log("Clicked")} reference="third">
+    //     Third
+    //   </button>
+    // `;
+    // console.log("Next will be an array");
+    // yield [
+    //   "A",
+    //   "B",
+    //   "C"
+    // ];
+    // console.log("Next will be a function");
+    // yield () => "fn";
+    // console.log("Next will be an async function");
+    // yield async () => "async fn";
+    // console.log("Next will be a node itself");
     yield* h(
       async function *(options, children) {
         yield "node result 1";
@@ -108,53 +108,51 @@ const nodes = h(
 
         clearInterval(interval);
         console.log("Returning children", children);
-        yield* children;
+        yield children;
       },
       undefined,
-      [
-        h(
-          async function *() {
-            yield "node result 4";
-            yield "node result 5";
+      h(
+        async function *() {
+          yield "node result 4";
+          yield "node result 5";
 
-            const nextSource = source();
+          const nextSource = source();
 
-            let count = 0;
-            let interval = setInterval(() => {
-              count += 1;
-              nextSource.push(`next interval 2 ${count}`);
-              if (count > 2) {
-                nextSource.close();
-              }
-            }, 1000);
+          let count = 0;
+          let interval = setInterval(() => {
+            count += 1;
+            nextSource.push(`next interval 2 ${count}`);
+            if (count > 2) {
+              nextSource.close();
+            }
+          }, 1000);
 
-            yield* nextSource;
+          yield* nextSource;
 
-            clearInterval(interval);
-          }
-        ),
-        h(
-          async function *() {
-            yield "node result 6";
-            yield "node result 7";
+          clearInterval(interval);
+        }
+      ),
+      h(
+        async function *() {
+          yield "node result 6";
+          yield "node result 7";
 
-            const nextSource = source();
+          const nextSource = source();
 
-            let count = 0;
-            let interval = setInterval(() => {
-              count += 1;
-              nextSource.push(`next interval 3 ${count}`);
-              if (count > 2) {
-                nextSource.close();
-              }
-            }, 1000);
+          let count = 0;
+          let interval = setInterval(() => {
+            count += 1;
+            nextSource.push(`next interval 3 ${count}`);
+            if (count > 2) {
+              nextSource.close();
+            }
+          }, 1000);
 
-            yield* nextSource;
+          yield* nextSource;
 
-            clearInterval(interval);
-          }
-        )
-      ]
+          clearInterval(interval);
+        }
+      )
     );
     console.log("I'm done");
   },

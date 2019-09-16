@@ -100,7 +100,7 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
    * Either way, if we have a source reference, we have a primitive value that we can look up later on
    */
   if (isSourceReference(source)) {
-    return asyncExtendedIterable([
+    return asyncIterable([
       {
         reference,
         scalar: true,
@@ -162,10 +162,9 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
     let next: IteratorResult<SourceReference>;
     do {
       next = await getNext(reference, newReference);
-      if (next.done) {
-        break;
+      if (!next.done) {
+        yield* createVNodeWithContext(context, next.value, options, childrenInstance);
       }
-      yield* createVNodeWithContext(context, next.value, options, childrenInstance);
     } while (!next.done);
   }
 
@@ -175,8 +174,10 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
   }
 
   async function *functionGenerator(source: SourceReferenceRepresentationFactory<O>) {
-    const childrenInstance = childrenGenerator(context, ...children);
-    const nextSource = source(options, childrenInstance);
+    const nextSource = source(options, {
+      reference: Fragment,
+      children: childrenGenerator(context, ...children)
+    });
     yield* createVNodeWithContext(context, nextSource, options, undefined);
   }
 }
