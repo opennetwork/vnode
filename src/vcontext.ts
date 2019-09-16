@@ -42,4 +42,10 @@ export interface VContext {
    */
   hydrate?: (node: VNode, tree?: Tree) => Promise<void>;
 
+  /**
+   * This function is invoked by a VContext consumer, it allows the VContext to perform any
+   * clean up tasks that are required
+   */
+  close?: () => Promise<void>;
+
 }

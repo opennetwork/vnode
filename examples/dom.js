@@ -26,27 +26,11 @@ const native = {
 
 class DOMContext extends WeakVContext {
 
-  async isolate(reference) {
-    return super.isolate(reference, () => new DOMContext());
-  }
-
-  async isNative(reference) {
-    return !!native[reference];
-  }
-
-  async getNative(reference) {
-    if (!native[reference]) {
-      return undefined;
-    }
-    return {
-      source: native[reference],
-      native: true,
-      reference: Symbol("Native Instance")
-    };
-  }
-
   async hydrate(node, tree) {
-    console.log("hydrate", { node, tree });
+    this.eventsTarget.hydrate.push({
+      node,
+      tree
+    });
     if (this.weak.has(node)) {
       return;
     }
@@ -62,6 +46,11 @@ class DOMContext extends WeakVContext {
 const currentContext = new DOMContext();
 const h = withContext(currentContext);
 const html = htm.bind(h);
+
+const promise = asyncExtendedIterable(currentContext.eventsTarget.hydrate)
+  .forEach(hydrate => {
+    console.log({ hydrate });
+  });
 
 const nodes = h(
   async function *() {
@@ -165,8 +154,14 @@ const nodesIterator = nodes[Symbol.asyncIterator]();
 
 asyncExtendedIterable(nodesIterator)
   .forEach(async value => {
-    console.log("Updated", value);
     await hydrate(currentContext, value);
   })
-  .then(() => console.log("Complete"))
+  .then(() => {
+    console.log("Completed hydrating");
+    return currentContext.close();
+  })
+  .then(() => promise)
+  .then(() => {
+    console.log("Completed listening");
+  })
   .catch(error => console.error({ error }));
