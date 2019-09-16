@@ -2,7 +2,7 @@
 
 > The API of this project is not expected to change significantly.
 > This project follows strict [semantic versioning](https://semver.org/), and any change to the API will result in either a minor version change 
-> for additional signatures, and a major version change for modifications to signatures or removal of a signature
+> for additional signatures, or a major version change for modifications to signatures or removal of a signature
 
 ## Contributing
 
