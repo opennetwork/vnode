@@ -10,10 +10,10 @@ import {
   VNode, VNodeRepresentationSource
 } from "./vnode";
 import {
-  asyncExtendedIterable,
   isAsyncIterable,
   isIterable,
   isPromise,
+  asyncExtendedIterable,
   isIterableIterator,
   getNext,
   asyncIterable
@@ -127,7 +127,7 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
    */
   if (isIterable(source) || isAsyncIterable(source)) {
     const childrenInstance = childrenGenerator(context, ...children);
-    return asyncExtendedIterable([
+    return asyncIterable([
       {
         reference: Fragment,
         children: childrenGenerator(context, asyncExtendedIterable(source).map(value => createVNodeWithContext(context, value, options, childrenInstance)))
@@ -139,7 +139,7 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
    * Allows for `undefined`, an empty `VNode`
    */
   if (!source) {
-    return asyncExtendedIterable([undefined]);
+    return asyncIterable([undefined]);
   }
 
   /**

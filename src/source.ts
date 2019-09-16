@@ -1,5 +1,5 @@
 import { AsyncIterableLike } from "iterable";
-import { FragmentVNode, VNode, VNodeRepresentationSource } from "./vnode";
+import { FragmentVNode, VNodeRepresentationSource } from "./vnode";
 
 /**
  * A scalar source reference, this could be either referencing a {@link NativeVNode} or referencing direct source
