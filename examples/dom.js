@@ -65,29 +65,29 @@ const html = htm.bind(h);
 
 const nodes = h(
   async function *() {
-    // console.log("Start");
-    // yield html`
-    //   <button onClick=${() => console.log("Clicked")} reference="first">
-    //     First
-    //   </button>
-    //   <button onClick=${() => console.log("Clicked")} reference="second">
-    //     Second
-    //   </button>
-    //   <button onClick=${() => console.log("Clicked")} reference="third">
-    //     Third
-    //   </button>
-    // `;
-    // console.log("Next will be an array");
-    // yield [
-    //   "A",
-    //   "B",
-    //   "C"
-    // ];
-    // console.log("Next will be a function");
-    // yield () => "fn";
-    // console.log("Next will be an async function");
-    // yield async () => "async fn";
-    // console.log("Next will be a node itself");
+    console.log("Start");
+    yield html`
+      <button onClick=${() => console.log("Clicked")} reference="first">
+        First
+      </button>
+      <button onClick=${() => console.log("Clicked")} reference="second">
+        Second
+      </button>
+      <button onClick=${() => console.log("Clicked")} reference="third">
+        Third
+      </button>
+    `;
+    console.log("Next will be an array");
+    yield [
+      "A",
+      "B",
+      "C"
+    ];
+    console.log("Next will be a function");
+    yield () => "fn";
+    console.log("Next will be an async function");
+    yield async () => "async fn";
+    console.log("Next will be a node itself");
     yield* h(
       async function *(options, children) {
         yield "node result 1";

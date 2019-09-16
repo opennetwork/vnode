@@ -36,6 +36,11 @@ async function* childrenUnion(childrenGroups: AsyncIterable<AsyncIterable<AsyncI
 
     let returnedIterators: boolean = false;
 
+    // Empty, lets treat it as such
+    if (!iterators.length) {
+      return yield asyncIterable([]);
+    }
+
     try {
       do {
         // This is our oldest layer at this point in time
