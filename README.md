@@ -5,6 +5,8 @@
 > will result in either a minor version change for additional signatures, 
 > or a major version change for modifications to signatures or removal of a signature
 
+## [Type Documentation](https://iterable.dev/iterable-h)
+
 ## Contributing
 
 Please see [Contributing](./CONTRIBUTING.md)
