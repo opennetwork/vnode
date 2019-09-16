@@ -1,7 +1,6 @@
 import { isSourceReference, SourceReference } from "./source";
 import { isAsyncIterable, AsyncIterableLike } from "iterable";
 import { VContext } from "./vcontext";
-import { ContextSourceOptions, SourceOptions } from "./source-options";
 import { Fragment } from "./fragment";
 
 /**
@@ -15,8 +14,7 @@ export interface VNode {
    */
   reference: SourceReference;
   /**
-   * An `AsyncIterable` that will return a `AsyncIterable<VNode>` that represents a group of children
-   *
+   * An `AsyncIterable` that will return a `AsyncIterable<VNode>` that represents a group of children updates
    * Each iteration represents an update to the {@link VNode}'s children state
    */
   children?: AsyncIterable<AsyncIterable<VNode>>;
@@ -26,10 +24,11 @@ export interface VNode {
    * A {@link VContext} may choose to utilise an external value to represent the source
    */
   source?: unknown;
+
   /**
    * The options provided to the {@link VNode} from the {@link createVNodeWithContext} function
    */
-  options?: unknown;
+  options?: object;
   /**
    * See {@link ScalarVNode}
    */
@@ -90,27 +89,19 @@ export type AsyncVNodeRepresentation = Promise<VNode> | AsyncIterable<VNode>;
 /**
  * A {@link VNode} that can be resolved synchronously
  */
-export type SyncVNodeRepresentation = VNode | Iterable<VNode>;
+export type SyncVNodeRepresentation = SourceReference | VNode | Iterable<VNode>;
 /**
  * A {@link VNode} with requiring _either_ synchronous or asynchronous resolution
  */
 export type VNodeRepresentation = AsyncVNodeRepresentation | SyncVNodeRepresentation;
 /**
- * A function that resolves to a {@link VNodeRepresentation} which can be further processed to obtain a group of {@link VNode} values
+ * A value that represents a {@link VNode}
  */
-export type VNodeRepresentationFactory<C extends VContext, O extends SourceOptions<C>> = (options: O & ContextSourceOptions<C>) => VNodeRepresentation;
+export type BasicVNodeRepresentation = VNodeRepresentation | AsyncIterableLike<VNodeRepresentation>;
 /**
  * A value that represents a {@link VNode}
  */
-export type VNodeRepresentationLike<C extends VContext, O extends SourceOptions<C>> = VNodeRepresentation | VNodeRepresentationFactory<C, O>;
-/**
- * A value that represents a {@link VNode}
- */
-export type BasicVNodeRepresentation<C extends VContext, O extends SourceOptions<C>> = VNodeRepresentationLike<C, O> | AsyncIterableLike<VNodeRepresentationLike<C, O>>;
-/**
- * A value that represents a {@link VNode}
- */
-export type VNodeRepresentationSource<C extends VContext, O extends SourceOptions<C>> = BasicVNodeRepresentation<C, O> | AsyncIterableLike<BasicVNodeRepresentation<C, O>>;
+export type VNodeRepresentationSource = BasicVNodeRepresentation | AsyncIterableLike<BasicVNodeRepresentation>;
 
 /**
  * Indicates if a value is a {@link VNode}

@@ -1,18 +1,15 @@
 import {
   Source
 } from "./source";
-import { ContextSourceOptions, SourceOptions } from "./source-options";
 import { VContext } from "./vcontext";
 import {
   VNode,
   VNodeRepresentationSource
 } from "./vnode";
 import { createVNodeWithContext } from "./create-node";
-import { asyncExtendedIterable, isAsyncIterable, isIterable, isIterableIterator } from "iterable";
 
 export * from "./fragment";
 export * from "./source";
-export * from "./source-options";
 export * from "./vcontext";
 export * from "./vcontext-weak";
 export * from "./vcontext-events";
@@ -27,34 +24,13 @@ export * from "./tree";
  *
  * See {@link createVNodeWithContext}
  *
+ * @param context
  * @param source
  * @param options
  * @param children
  */
-export async function *createVNode<C extends VContext, O extends SourceOptions<C>>(source: Source<C, O>, options?: O, ...children: VNodeRepresentationSource<C, unknown>[]): AsyncIterable<VNode> {
-  if (!options.context) {
-    throw new Error("Context is required, please provide it at the top level using withContext");
-  }
-  const hydratedOptions: ContextSourceOptions<C> = {
-    ...options,
-    context: options.context,
-    reference: options ? options.reference || Symbol("Element") : Symbol("Element"),
-    children: asyncExtendedIterable(options ? options.children || children : children)
-      .flatMap((child): Iterable<VNodeRepresentationSource<C, unknown>> | AsyncIterable<VNodeRepresentationSource<C, unknown>> => {
-        /**
-         * If iterable iterator, skip flat mapping and use the value
-         */
-        if (isIterableIterator(child)) {
-          return [child];
-        }
-        if (isIterable(child) || isAsyncIterable(child)) {
-          return child;
-        }
-        return [child];
-      })
-      .toIterable()
-  };
-  return yield* createVNodeWithContext(source, hydratedOptions);
+export function createVNode<O extends object>(context: VContext, source: Source<O>, options?: O, ...children: VNodeRepresentationSource[]): AsyncIterable<VNode> {
+  return createVNodeWithContext(context, source, options, ...children);
 }
 
 /**
@@ -65,11 +41,8 @@ export async function *createVNode<C extends VContext, O extends SourceOptions<C
  *
  * @param context
  */
-export function withContext<C extends VContext>(context: C) {
-  return async function *createVNodeWithContext<O extends SourceOptions<C>>(source: Source<C, O>, options?: O, ...children: VNodeRepresentationSource<C, unknown>[]): AsyncIterable<VNode> {
-    return yield* createVNode(source, {
-      ...options,
-      context: options ? options.context || context : context
-    }, ...children);
+export function withContext(context: VContext) {
+  return function createVNodeWithContext<O extends object>(source: Source<O>, options?: O, ...children: VNodeRepresentationSource[]): AsyncIterable<VNode> {
+    return createVNode(context, source, options, ...children);
   };
 }

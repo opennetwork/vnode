@@ -2,6 +2,7 @@ import { VContext } from "./vcontext";
 import { VNode } from "./vnode";
 import { asyncExtendedIterable, AsyncIterableLike } from "iterable";
 import { Tree } from "./tree";
+import { Fragment } from "./fragment";
 
 /**
  * Hydrates a group of children obtained from {@link VNode.children}
@@ -64,7 +65,7 @@ export async function hydrateChildrenGroup(context: VContext, node: VNode, tree:
  * @param tree
  */
 export async function hydrateChildren(context: VContext, node: VNode, tree?: Tree) {
-  await asyncExtendedIterable(node.children).forEach( nextChildren => hydrateChildrenGroup(context, node, tree, nextChildren));
+  await asyncExtendedIterable(node.children).forEach(nextChildren => hydrateChildrenGroup(context, node, tree, nextChildren));
 }
 
 /**
@@ -77,7 +78,7 @@ export async function hydrateChildren(context: VContext, node: VNode, tree?: Tre
  * @param tree
  */
 export async function hydrate(context: VContext, node: VNode, tree?: Tree) {
-  if (!context.hydrate) {
+  if (!context.hydrate || !node) {
     return;
   }
   return context.hydrate(node, tree);

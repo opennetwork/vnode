@@ -1,4 +1,4 @@
-import { WeakVContext, withContext, hydrate } from "../dist";
+import { WeakVContext, withContext, hydrate, hydrateChildren } from "../dist";
 import { asyncExtendedIterable, source } from "iterable";
 import htm from "htm";
 
@@ -45,13 +45,16 @@ class DOMContext extends WeakVContext {
     };
   }
 
-  async hydrate(node, tree, children) {
+  async hydrate(node, tree) {
+    console.log("hydrate", { node });
+    if (this.weak.has(node)) {
+      return;
+    }
+    this.weak.set(node, true);
     if (node.native && node.source && node.options) {
       return node.source.hydrate(node, node.options);
     }
-    if (children) {
-      await children();
-    }
+    await hydrateChildren(this, node, tree);
   }
 
 }
@@ -71,7 +74,7 @@ const nodes = h(
         Second
       </button>
       <button onClick=${() => console.log("Clicked")} reference="third">
-        Second
+        Third
       </button>
     `;
     console.log("Next will be an array");
@@ -86,7 +89,7 @@ const nodes = h(
     yield async () => "async fn";
     console.log("Next will be a node itself");
     yield* h(
-      async function *({ children }) {
+      async function *(options, children) {
         yield "node result 1";
         yield "node result 2";
 
@@ -104,10 +107,10 @@ const nodes = h(
         yield* nextSource;
 
         clearInterval(interval);
-
+        console.log("Returning children", children);
         yield* children;
       },
-      {},
+      undefined,
       [
         h(
           async function *() {
@@ -164,7 +167,7 @@ const nodesIterator = nodes[Symbol.asyncIterator]();
 
 asyncExtendedIterable(nodesIterator)
   .forEach(async value => {
-    console.log(value);
+    console.log("Updated", value);
     await hydrate(currentContext, value);
   })
   .then(() => console.log("Complete"))

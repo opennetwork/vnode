@@ -1,6 +1,5 @@
 import { Source } from "./source";
-import { VNode, VNodeRepresentation } from "./vnode";
-import { ContextSourceOptions } from "./source-options";
+import { VNode, VNodeRepresentationSource } from "./vnode";
 import { VContextEvents } from "./vcontext-events";
 import { Tree } from "./tree";
 
@@ -14,9 +13,10 @@ import { Tree } from "./tree";
  */
 export interface VContext {
 
-  events?: VContextEvents<this>;
+  events?: VContextEvents;
 
   weak?: WeakMap<object, unknown>;
+
   /**
    * This function is invoked during {@link createVNodeWithContext}, it allows a {@link VContext} to override this functionality
    *
@@ -24,7 +24,7 @@ export interface VContext {
    * @param source
    * @param options
    */
-  createVNode?: <O extends ContextSourceOptions<this>>(source: Source<this, O>, options: O) => undefined | AsyncIterable<VNode>;
+  createVNode?: <O extends object>(source: Source<O>, options: O) => undefined | AsyncIterable<VNode>;
   /**
    * This function is invoked during {@link children}, it allows a {@link VContext} to override this functionality
    *
@@ -32,7 +32,7 @@ export interface VContext {
    * @param source
    * @param options
    */
-  children?: <O extends ContextSourceOptions<this>>(children: AsyncIterable<VNodeRepresentation>, options: O) => undefined | AsyncIterable<VNode>;
+  children?: (children: VNodeRepresentationSource[]) => undefined | AsyncIterable<AsyncIterable<VNode>>;
   /**
    * This function is invoked by {@link hydrate}
    *

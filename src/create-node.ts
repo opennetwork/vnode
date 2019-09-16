@@ -1,17 +1,35 @@
 import { VContext } from "./vcontext";
-import { ContextSourceOptions } from "./source-options";
 import {
   isSourceReference,
   SourceReference,
-  Source
+  Source,
+  SourceReferenceRepresentationFactory
 } from "./source";
 import {
   isVNode,
-  VNode
+  VNode, VNodeRepresentationSource
 } from "./vnode";
-import { asyncExtendedIterable, isAsyncIterable, isIterable, isPromise, isIterableIterator, getNext } from "iterable";
-import { children } from "./children";
+import {
+  asyncExtendedIterable,
+  isAsyncIterable,
+  isIterable,
+  isPromise,
+  isIterableIterator,
+  getNext,
+  asyncIterable
+} from "iterable";
+import { children as childrenGenerator } from "./children";
 import { Fragment } from "./fragment";
+
+function getReferenceFromOptions(options: object | undefined): SourceReference {
+  function isReferenceOptions(options: object): options is object & { reference?: unknown } {
+    return options && options.hasOwnProperty("reference");
+  }
+  if (!(isReferenceOptions(options) && isSourceReference(options.reference))) {
+    return undefined;
+  }
+  return options.reference;
+}
 
 /**
  * Generates instances of {@link VNode} based on the provided source
@@ -23,10 +41,12 @@ import { Fragment } from "./fragment";
  * The special case to point out here is if the source is an `IterableIterator` (see {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#Is_a_generator_object_an_iterator_or_an_iterable})
  * then each iteration will result in a new {@link VNode} being created
  *
+ * @param context
  * @param source
  * @param options
+ * @param children
  */
-export async function *createVNodeWithContext<C extends VContext, HO extends ContextSourceOptions<C>>(source: Source<C, unknown>, options: HO): AsyncIterable<VNode> {
+export function createVNodeWithContext<O extends object>(context: VContext, source: Source<O>, options?: O, ...children: VNodeRepresentationSource[]): AsyncIterable<VNode> {
   /**
    * Allow {@link VContext} to override the _createVNode_ process
    *
@@ -36,10 +56,10 @@ export async function *createVNodeWithContext<C extends VContext, HO extends Con
    *
    * If it is `undefined` the context is indicating that we can continue as normal
    */
-  if (typeof options.context.createVNode === "function") {
-    const result = options.context.createVNode(source, options);
+  if (typeof context.createVNode === "function") {
+    const result = context.createVNode(source, options);
     if (result) {
-      return yield* result;
+      return result;
     }
   }
 
@@ -49,10 +69,7 @@ export async function *createVNodeWithContext<C extends VContext, HO extends Con
    * The function _may_ return any other kind of source, so we need to start our process again
    */
   if (source instanceof Function) {
-    const nextSource = source({
-      ...options
-    });
-    return yield* createVNodeWithContext(nextSource, options);
+    return functionGenerator(source);
   }
 
   /**
@@ -62,15 +79,17 @@ export async function *createVNodeWithContext<C extends VContext, HO extends Con
    * Maybe this isn't the case if the value isn't a promise to start with ¯\_(ツ)_/¯
    */
   if (isPromise(source)) {
-    source = await source;
+    return promiseGenerator(source);
   }
 
   /**
    * If we already have a {@link VNode} then we don't and can't do any more
    */
   if (isVNode(source)) {
-    return yield source;
+    return asyncIterable([source]);
   }
+
+  const reference = getReferenceFromOptions(options) || Symbol("VNode");
 
   /**
    * A source reference may be in reference to a context we don't know about, this can be resolved from
@@ -81,13 +100,15 @@ export async function *createVNodeWithContext<C extends VContext, HO extends Con
    * Either way, if we have a source reference, we have a primitive value that we can look up later on
    */
   if (isSourceReference(source)) {
-    return yield {
-      reference: options.reference,
-      scalar: true,
-      source: source,
-      options,
-      children: children(options)
-    };
+    return asyncExtendedIterable([
+      {
+        reference,
+        scalar: true,
+        source: source,
+        options,
+        children: childrenGenerator(context, ...children)
+      }
+    ]);
   }
 
   /**
@@ -96,7 +117,7 @@ export async function *createVNodeWithContext<C extends VContext, HO extends Con
    * See {@link generator} for details
    */
   if (isIterableIterator(source)) {
-    return yield* generator(Symbol("Iterable Iterator"), source);
+    return generator(Symbol("Iterable Iterator"), source);
   }
 
   /**
@@ -105,30 +126,26 @@ export async function *createVNodeWithContext<C extends VContext, HO extends Con
    * We will create a `Fragment` that holds our node state to grab later
    */
   if (isIterable(source) || isAsyncIterable(source)) {
-    return yield {
-      reference: Fragment,
-      children: children(options, asyncExtendedIterable(source).map(value => createVNodeWithContext(value, options)))
-    };
+    const childrenInstance = childrenGenerator(context, ...children);
+    return asyncExtendedIterable([
+      {
+        reference: Fragment,
+        children: childrenGenerator(context, asyncExtendedIterable(source).map(value => createVNodeWithContext(context, value, options, childrenInstance)))
+      }
+    ]);
   }
 
   /**
    * Allows for `undefined`, an empty `VNode`
    */
   if (!source) {
-    return yield undefined;
+    return asyncExtendedIterable([undefined]);
   }
 
   /**
    * We _shouldn't_ get here AFAIK, each kind of source should have been dealt with by the time we get here
-   *
-   * I'm leaving this here so that in the future if we do implement additional source types, it will "just work"
    */
-  return yield {
-    reference: options.reference,
-    source,
-    options,
-    children: children(options)
-  };
+  throw new Error("Unexpected VNode source provided");
 
   /**
    * Iterates through an `IterableIterator` to generate new {@link VNode} instances
@@ -141,13 +158,25 @@ export async function *createVNodeWithContext<C extends VContext, HO extends Con
    * @param reference
    */
   async function *generator(newReference: SourceReference, reference: IterableIterator<SourceReference> | AsyncIterableIterator<SourceReference>): AsyncIterableIterator<VNode> {
+    const childrenInstance = childrenGenerator(context, ...children);
     let next: IteratorResult<SourceReference>;
     do {
       next = await getNext(reference, newReference);
       if (next.done) {
         break;
       }
-      yield* createVNodeWithContext(next.value, options);
+      yield* createVNodeWithContext(context, next.value, options, childrenInstance);
     } while (!next.done);
+  }
+
+  async function *promiseGenerator(promise: Promise<SourceReference | VNode>) {
+    const result = await promise;
+    yield* createVNodeWithContext(context, result, options, ...children);
+  }
+
+  async function *functionGenerator(source: SourceReferenceRepresentationFactory<O>) {
+    const childrenInstance = childrenGenerator(context, ...children);
+    const nextSource = source(options, childrenInstance);
+    yield* createVNodeWithContext(context, nextSource, options, undefined);
   }
 }
