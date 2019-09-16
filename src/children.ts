@@ -25,21 +25,18 @@ async function* childrenUnion(childrenGroups: AsyncIterable<AsyncIterable<AsyncI
   );
 
   async function *updateGenerator(): AsyncIterable<AsyncIterable<VNode>> {
-    const pending = new Map<AsyncIterator<unknown>, FragmentVNode[]>();
-
-    const emptyFragments = new Map<AsyncIterator<unknown>, FragmentVNode>();
-
     const iterators: AsyncIterator<FragmentVNode>[] = await asyncExtendedIterable(childrenGroups).map(group => map(asyncIterator(group))).toArray();
-    const promises: Promise<IteratorResult<FragmentVNode>>[] = iterators.map(iterator => iterator.next());
-
-    let currentLayer: FragmentVNode[] = [];
-
-    let returnedIterators: boolean = false;
 
     // Empty, lets treat it as such
     if (!iterators.length) {
       return yield asyncIterable([]);
     }
+
+    const pending = new Map<AsyncIterator<unknown>, FragmentVNode[]>();
+    const emptyFragments = new Map<AsyncIterator<unknown>, FragmentVNode>();
+    const promises: Promise<IteratorResult<FragmentVNode>>[] = iterators.map(iterator => iterator.next());
+    let currentLayer: FragmentVNode[] = [];
+    let returnedIterators: boolean = false;
 
     try {
       do {
