@@ -4,11 +4,11 @@ import { isSourceReference, SourceReference } from "./source";
 import { createVNodeWithContext } from "./create-node";
 import {
   asyncExtendedIterable,
-  asyncIterable, asyncIterator,
+  asyncIterable,
+  asyncIterator,
   isIterableIterator,
   isPromise,
   isTransientAsyncIteratorSource,
-  source,
   getNext,
   extendedIterable
 } from "iterable";
@@ -159,10 +159,6 @@ async function* childrenUnion(childrenGroups: AsyncIterable<AsyncIterable<AsyncI
       const fragment: FragmentVNode = { reference: Fragment };
       emptyFragments.set(iterator, fragment);
       return fragment;
-    }
-
-    function drain() {
-
     }
   }
 }
