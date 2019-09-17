@@ -1,4 +1,4 @@
-# `iterable-h` - Virtual Node State Manager
+# `vnode` - Virtual Node State Manager
 
 > The exported signature of this project is not expected to change significantly.
 > This project follows strict [semantic versioning](https://semver.org/), and any change to the exported signature
