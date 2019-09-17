@@ -1,5 +1,5 @@
 {
-  "name": "iterable-h",
+  "name": "@opennetwork/vnode",
   "version": "11.0.8",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
