@@ -19,7 +19,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/opennetwork/iterable-h.git"
+    "url": "https://github.com/opennetwork/vnode.git"
   },
   "devDependencies": {
     "@types/node": "^12.7.4",
