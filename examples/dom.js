@@ -1,4 +1,4 @@
-import {WeakVContext, withContext, hydrate, hydrateChildren, Fragment} from "../dist";
+import { WeakVContext, withContext, hydrate, hydrateChildren } from "../dist/index.js";
 import { asyncExtendedIterable, source } from "iterable";
 import htm from "htm";
 

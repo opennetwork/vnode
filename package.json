@@ -7,7 +7,7 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "build": "rm -rf dist && tsc --declaration && npm run tslint",
+    "build": "rm -rf dist && tsc --declaration && npm run tslint && node correct-import-extensions.js",
     "watch": "tsc -w",
     "tslint": "tslint -c tslint.json -p tsconfig.json",
     "prepublishOnly": "npm run build",
@@ -15,7 +15,7 @@
   },
   "peerDependencies": {},
   "dependencies": {
-    "iterable": "^5.2.0"
+    "iterable": "^5.2.2"
   },
   "repository": {
     "type": "git",
@@ -24,6 +24,7 @@
   "devDependencies": {
     "@types/node": "^12.7.4",
     "esm": "^3.2.25",
+    "filehound": "^1.17.3",
     "htm": "^2.2.1",
     "tslint": "^5.19.0",
     "typedoc": "^0.15.0",
