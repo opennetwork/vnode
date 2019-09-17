@@ -22,6 +22,7 @@
     "url": "https://github.com/opennetwork/vnode.git"
   },
   "devDependencies": {
+    "@opennetwork/vnode-test": "^1.0.2",
     "@types/node": "^12.7.4",
     "esm": "^3.2.25",
     "filehound": "^1.17.3",

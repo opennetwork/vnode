@@ -159,6 +159,7 @@ export function isScalarVNode(value: unknown): value is ScalarVNode {
   }
   return (
     isScalarVNodeLike(value) &&
+    isSourceReference(value.source) &&
     value.scalar === true
   );
 }
