@@ -12,20 +12,11 @@ import {
 import { Fragment } from "./fragment";
 
 async function* childrenUnion(childrenGroups: AsyncIterable<AsyncIterable<AsyncIterable<VNode>>>): AsyncIterable<AsyncIterable<VNode>> {
-  yield asyncIterable(
-    [
-      {
-        reference: Fragment,
-        children: asyncIterable([
-          asyncExtendedIterable(childrenGroups)
-            .map(children => ({
-              reference: Fragment,
-              children
-            }))
-        ])
-      }
-    ]
-  );
+  yield asyncExtendedIterable(childrenGroups)
+    .map(children => ({
+      reference: Fragment,
+      children
+    }));
 }
 
 export async function *children(context: VContext, ...source: VNodeRepresentationSource[]): AsyncIterable<AsyncIterable<VNode>> {
