@@ -16,10 +16,10 @@
     esutils "^2.0.2"
     js-tokens "^4.0.0"
 
-"@opennetwork/vnode-test@^1.0.2":
-  version "1.0.2"
-  resolved "https://registry.npmjs.org/@opennetwork/vnode-test/-/vnode-test-1.0.2.tgz#e8dd99a63a142ae9c5e79ff0af2f140dd1d29ef9"
-  integrity sha512-zYYn2/9UtggDj20wxkYUGB2tgz36uXoROTMbWAMLnLYxqc347jIVrakzx7pcD6vtZ4JYBbWkT8aUr44rij63dQ==
+"@opennetwork/vnode-test@^1.0.3":
+  version "1.0.3"
+  resolved "https://registry.npmjs.org/@opennetwork/vnode-test/-/vnode-test-1.0.3.tgz#6992bb2212300acfa578581202ef18f37f91b79d"
+  integrity sha512-4d/jP0BFsM25KI8g9AoVrJdBR4Ag4XwUlvjEiUCEOjGA452LRWSetGlKocHgOkoeH89vigL1MKRiAfj7Btvgaw==
   dependencies:
     iterable "^5.2.2"
 

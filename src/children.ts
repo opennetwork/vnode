@@ -27,8 +27,6 @@ export async function *children(context: VContext, ...source: VNodeRepresentatio
     }
   }
 
-  const sourceReference = new Map<SourceReference, AsyncIterable<AsyncIterable<VNode>>>();
-
   async function *eachSource(source: VNodeRepresentationSource): AsyncIterable<AsyncIterable<VNode>> {
     if (isPromise(source)) {
       return yield* eachSource(await source);
@@ -36,12 +34,7 @@ export async function *children(context: VContext, ...source: VNodeRepresentatio
 
     // Replay the same for the same source
     if (isSourceReference(source)) {
-      if (sourceReference.has(source)) {
-        return yield* sourceReference.get(source);
-      } else {
-        sourceReference.set(source, eachSource(createVNodeWithContext(context, source)));
-        return yield* sourceReference.get(source);
-      }
+      return yield* eachSource(createVNodeWithContext(context, source)));
     }
 
     if (isVNode(source)) {
