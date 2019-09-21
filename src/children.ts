@@ -34,7 +34,7 @@ export async function *children(context: VContext, ...source: VNodeRepresentatio
 
     // Replay the same for the same source
     if (isSourceReference(source)) {
-      return yield* eachSource(createVNodeWithContext(context, source)));
+      return yield* eachSource(createVNodeWithContext(context, source));
     }
 
     if (isVNode(source)) {
