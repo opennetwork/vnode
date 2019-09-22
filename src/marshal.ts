@@ -1,13 +1,12 @@
 import { MarshalledVNode, VNode } from "./vnode";
-import { isSourceReference, MarshalledSourceReference, SourceReference } from "./source";
+import { isMarshalledSourceReference, MarshalledSourceReference, SourceReference } from "./source";
 import { asyncExtendedIterable } from "iterable";
 
 /**
  * Marshals a VNode into a synchronous state allowing for transmission or storage
  *
- * This involves three parts:
+ * This involves two parts:
  *
- * - Any scalar with no children or options will be represented directly as a `number`, `string`, or `boolean`
  * - All references will be turned into a `number`, or if a `getReference` `function` is passed, a `number`, `string`, or `boolean`
  * - All children will be represented as an array of arrays, where the values have also passed through the marshal process
  *
@@ -19,7 +18,7 @@ import { asyncExtendedIterable } from "iterable";
  * @param parent
  * @param getReference
  */
-export async function marshal(node: VNode, parent?: SourceReference, getReference?: (parent: SourceReference, reference: SourceReference) => MarshalledSourceReference): Promise<MarshalledVNode | MarshalledSourceReference> {
+export async function marshal(node: VNode, parent?: SourceReference, getReference?: (parent: SourceReference, reference: SourceReference) => MarshalledSourceReference): Promise<MarshalledVNode> {
   /**
    * We will use this as a reference counter when we don't have a getReference function
    *
@@ -48,31 +47,6 @@ export async function marshal(node: VNode, parent?: SourceReference, getReferenc
     ).toArray()
   ).toArray();
 
-  if (
-    node.scalar &&
-    /**
-     * All children lists must have no values, which would mean this VNode never will represent a VNode with children
-     */
-    (
-      children.length === 0 ||
-      children.every(children => children.length === 0)
-    ) &&
-    /**
-     * A ScalarVNode can have options like any other VNode, if it does we need the full representation
-     */
-    (
-      !node.options ||
-      Object.keys(node.options).length === 0
-    ) &&
-    isSourceReference(node.source) &&
-    /**
-     * If its a symbol, its a no go, it will be serialised as null, giving us no information
-     */
-    typeof node.source !== "symbol"
-  ) {
-    return node.source;
-  }
-
   return {
     ...node,
     reference,
@@ -88,7 +62,11 @@ export async function marshal(node: VNode, parent?: SourceReference, getReferenc
    */
   function getReferenceInternal(parent: SourceReference | undefined, sourceReference: SourceReference): MarshalledSourceReference {
     if (getReference) {
-      return getReference(parent || rootParent, sourceReference);
+      const value = getReference(parent || rootParent, sourceReference);
+      if (!isMarshalledSourceReference(value)) {
+        throw new Error(`getReference returned a value that wasn't string, number, or boolean, which is not expected`);
+      }
+      return value;
     }
     let map = referenceMap.get(parent || rootParent);
     if (!map) {
