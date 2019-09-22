@@ -20,7 +20,10 @@ export async function marshal(node: VNode, parent?: SourceReference, getReferenc
   if (
     node.scalar &&
     // Children length must be zero
-    (children.length === 0 || (children.length === 1 && children[0].length === 0)) &&
+    (
+      children.length === 0 ||
+      children.every(children => children.length === 0)
+    ) &&
     // We must have no options, or no keys
     (
       !node.options ||
