@@ -11,6 +11,7 @@ const context = {
 const instance = createVNode(
   context,
   {
+    reference: 1,
     source: "main",
     options: {
       class: "main-content"
@@ -18,6 +19,7 @@ const instance = createVNode(
     children: [
       [
         {
+          reference: 2,
           source: "button",
           options: {
             class: "primary"
@@ -27,6 +29,7 @@ const instance = createVNode(
           ]
         },
         {
+          reference: 3,
           source: "button",
           options: {
             class: "secondary"
@@ -38,6 +41,7 @@ const instance = createVNode(
       ],
       [
         {
+          reference: 2,
           source: "button",
           options: {
             class: "primary"
@@ -47,6 +51,7 @@ const instance = createVNode(
           ]
         },
         {
+          reference: 3,
           source: "button",
           options: {
             class: "primary"
