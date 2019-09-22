@@ -1,6 +1,6 @@
 {
   "name": "@opennetwork/vnode",
-  "version": "12.2.0",
+  "version": "12.3.0",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
