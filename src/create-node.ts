@@ -3,11 +3,14 @@ import {
   isSourceReference,
   SourceReference,
   Source,
-  SourceReferenceRepresentationFactory
+  SourceReferenceRepresentationFactory,
+  MarshalledSourceReference
 } from "./source";
 import {
+  isMarshalledVNode,
   isVNode,
-  VNode, VNodeRepresentationSource
+  VNode,
+  VNodeRepresentationSource
 } from "./vnode";
 import {
   isAsyncIterable,
@@ -20,16 +23,6 @@ import {
 } from "iterable";
 import { children as childrenGenerator } from "./children";
 import { Fragment } from "./fragment";
-
-function getReferenceFromOptions(options: object | undefined): SourceReference {
-  function isReferenceOptions(options: object): options is object & { reference?: unknown } {
-    return options && options.hasOwnProperty("reference");
-  }
-  if (!(isReferenceOptions(options) && isSourceReference(options.reference))) {
-    return undefined;
-  }
-  return options.reference;
-}
 
 /**
  * Generates instances of {@link VNode} based on the provided source
@@ -89,7 +82,15 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
     return asyncIterable([source]);
   }
 
-  const reference = getReferenceFromOptions(options) || Symbol("VNode");
+  /**
+   * If we already have a {@link MarshalledVNode} then we need to turn its children into an async iterable
+   * and ensure they're unmarshalled
+   */
+  if (isMarshalledVNode(source)) {
+    return unmarshalGenerator(source);
+  }
+
+  const reference = getReference(context, options);
 
   /**
    * A source reference may be in reference to a context we don't know about, this can be resolved from
@@ -100,15 +101,7 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
    * Either way, if we have a source reference, we have a primitive value that we can look up later on
    */
   if (isSourceReference(source)) {
-    return asyncIterable([
-      {
-        reference,
-        scalar: true,
-        source: source,
-        options,
-        children: childrenGenerator(context, ...children)
-      }
-    ]);
+    return sourceReferenceGenerator(reference, source, options, ...children);
   }
 
   /**
@@ -180,4 +173,61 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
     });
     yield* createVNodeWithContext(context, nextSource, options, undefined);
   }
+
+  async function *unmarshalGenerator(source: VNode): AsyncIterable<VNode> {
+    yield unmarshal(source);
+
+    function unmarshal(source: VNode | MarshalledSourceReference): VNode {
+      if (isSourceReference(source)) {
+        return sourceReferenceVNode(getReference(context), source);
+      }
+      if (!isMarshalledVNode(source)) {
+        return source;
+      }
+      return {
+        ...source,
+        // Replace our reference if required
+        reference: isSourceReference(source.reference) ? getMarshalledReference(context, source.reference) : getReference(context, source.options),
+        children: asyncExtendedIterable(source.children).map(children => asyncExtendedIterable(children).map(unmarshal).toIterable()).toIterable()
+      };
+    }
+  }
+
+  async function *sourceReferenceGenerator(reference: SourceReference, source: SourceReference, options?: object, ...children: VNodeRepresentationSource[]): AsyncIterable<VNode> {
+    yield sourceReferenceVNode(reference, source, options, ...children);
+  }
+
+  function sourceReferenceVNode(reference: SourceReference, source: SourceReference, options?: object, ...children: VNodeRepresentationSource[]): VNode {
+    return {
+      reference: reference || getReference(context, options),
+      scalar: true,
+      source: source,
+      options,
+      children: childrenGenerator(context, ...children)
+    };
+  }
+
+}
+
+function getMarshalledReference(context: VContext, reference: MarshalledSourceReference): SourceReference {
+  if (context.reference) {
+    return context.reference(reference);
+  }
+  return reference;
+}
+
+function getReference(context: VContext, options?: object) {
+  const fromOptions = getReferenceFromOptions(options);
+  const fromContext = context.reference ? context.reference(fromOptions) : fromOptions;
+  return fromContext || Symbol("VNode");
+}
+
+function getReferenceFromOptions(options: object | undefined): SourceReference {
+  function isReferenceOptions(options: object): options is object & { reference?: unknown } {
+    return options && options.hasOwnProperty("reference");
+  }
+  if (!(isReferenceOptions(options) && isSourceReference(options.reference))) {
+    return undefined;
+  }
+  return options.reference;
 }

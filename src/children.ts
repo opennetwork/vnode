@@ -1,6 +1,6 @@
 import { VContext } from "./vcontext";
-import { isVNode, VNode, VNodeRepresentationSource } from "./vnode";
-import { isSourceReference, SourceReference } from "./source";
+import { isMarshalledVNode, isVNode, VNode, VNodeRepresentationSource } from "./vnode";
+import { isSourceReference } from "./source";
 import { createVNodeWithContext } from "./create-node";
 import {
   asyncExtendedIterable,
@@ -32,15 +32,15 @@ export async function *children(context: VContext, ...source: VNodeRepresentatio
       return yield* eachSource(await source);
     }
 
-    // Replay the same for the same source
-    if (isSourceReference(source)) {
-      return yield* eachSource(createVNodeWithContext(context, source));
-    }
-
     if (isVNode(source)) {
       return yield asyncIterable([
         source
       ]);
+    }
+
+    // These need further processing through createVNodeWithContext
+    if (isSourceReference(source) || isMarshalledVNode(source)) {
+      return yield* eachSource(createVNodeWithContext(context, source));
     }
 
     if (isIterableIterator(source) || isTransientAsyncIteratorSource(source)) {

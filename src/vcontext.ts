@@ -1,4 +1,4 @@
-import { Source } from "./source";
+import { Source, SourceReference } from "./source";
 import { VNode, VNodeRepresentationSource } from "./vnode";
 import { VContextEvents } from "./vcontext-events";
 import { Tree } from "./tree";
@@ -41,6 +41,14 @@ export interface VContext {
    * @param tree
    */
   hydrate?: (node: VNode, tree?: Tree) => Promise<void>;
+
+  /**
+   * This function is invoked by {@link createVNode} when a reference is to be created for a
+   * {@link VNode}, it can be used to replace the reference that is being utilised
+   *
+   * Construction of a reference must be synchronous
+   */
+  reference?: (reference?: SourceReference) => SourceReference;
 
   /**
    * This function is invoked by a VContext consumer, it allows the VContext to perform any

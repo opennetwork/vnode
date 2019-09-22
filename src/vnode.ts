@@ -1,5 +1,5 @@
-import { isSourceReference, SourceReference } from "./source";
-import { isAsyncIterable, AsyncIterableLike } from "iterable";
+import { isSourceReference, SourceReference, MarshalledSourceReference } from "./source";
+import { isAsyncIterable, AsyncIterableLike, isIterable } from "iterable";
 import { VContext } from "./vcontext";
 import { Fragment } from "./fragment";
 
@@ -42,6 +42,17 @@ export interface VNode {
    */
   hydrated?: boolean;
 }
+
+/**
+ * A {@link VNode} that has been marshalled, allowing for transmission or storage of the VNode state
+ *
+ * Children can be represented as a synchronous iterable such as an array, which then utilises synchronous iterables
+ * for each update list of children
+ */
+export type MarshalledVNode = Omit<VNode, "children"> & {
+  reference: MarshalledSourceReference;
+  children: Iterable<Iterable<MarshalledVNode | MarshalledSourceReference>>;
+};
 
 /**
  * A {@link VNode} that has a scalar {@link SourceReference} {@link VNode.source}
@@ -89,7 +100,7 @@ export type AsyncVNodeRepresentation = Promise<VNode> | AsyncIterable<VNode>;
 /**
  * A {@link VNode} that can be resolved synchronously
  */
-export type SyncVNodeRepresentation = SourceReference | VNode | Iterable<VNode>;
+export type SyncVNodeRepresentation = MarshalledVNode | SourceReference | VNode | Iterable<VNode>;
 /**
  * A {@link VNode} with requiring _either_ synchronous or asynchronous resolution
  */
@@ -103,20 +114,25 @@ export type BasicVNodeRepresentation = VNodeRepresentation | AsyncIterableLike<V
  */
 export type VNodeRepresentationSource = BasicVNodeRepresentation | AsyncIterableLike<BasicVNodeRepresentation>;
 
+function isVNodeLike(value: unknown): value is { reference: unknown, children: unknown, options: unknown } {
+  return typeof value === "function" || typeof value === "object";
+}
+
 /**
  * Indicates if a value is a {@link VNode}
  * @param value
  */
 export function isVNode(value: unknown): value is VNode {
-  function isVNodeLike(value: unknown): value is { reference?: unknown, children?: unknown } {
-    return typeof value === "function" || typeof value === "object";
-  }
   return (
     isVNodeLike(value) &&
     isSourceReference(value.reference) &&
     (
       !value.children ||
       isAsyncIterable(value.children)
+    ) &&
+    (
+      !value.options ||
+      typeof value.options === "object"
     )
   );
 }
@@ -172,5 +188,25 @@ export function isFragmentVNode(value: unknown): value is FragmentVNode {
   return (
     isVNode(value) &&
     value.reference === Fragment
+  );
+}
+
+/**
+ * Indicates if a valid is a {@link MarshalledVNode}
+ * @param value
+ */
+export function isMarshalledVNode(value: unknown): value is MarshalledVNode {
+  return (
+    isVNodeLike(value) &&
+    (
+      !value.reference ||
+      isSourceReference(value.reference)
+    ) &&
+    // If we don't have children, then we have a normal VNode
+    isIterable(value.children) &&
+    (
+      !value.options ||
+      typeof value.options === "object"
+    )
   );
 }

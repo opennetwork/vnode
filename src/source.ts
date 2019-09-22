@@ -2,9 +2,13 @@ import { AsyncIterableLike } from "iterable";
 import { FragmentVNode, VNodeRepresentationSource } from "./vnode";
 
 /**
+ * A scalar source reference that can be transmitted or stored
+ */
+export type MarshalledSourceReference = string | number | boolean;
+/**
  * A scalar source reference, this could be either referencing a {@link NativeVNode} or referencing direct source
  */
-export type SourceReference = string | symbol | number | boolean;
+export type SourceReference = MarshalledSourceReference | symbol;
 /**
  * A {@link SourceReference} that requires asynchronous resolution
  */
