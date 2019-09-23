@@ -7,6 +7,7 @@ import {
   MarshalledSourceReference
 } from "./source";
 import {
+  isFragmentVNode,
   isMarshalledVNode,
   isVNode,
   VNode,
@@ -73,6 +74,19 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
    */
   if (isPromise(source)) {
     return promiseGenerator(source);
+  }
+
+  /**
+   * This allows fragments to be extended with children
+   */
+  if (isFragmentVNode(source) && !source.children) {
+    // If a fragment has no children then we will attach our children to it
+    return asyncIterable([
+      {
+        ...source,
+        children: childrenGenerator(context, ...children)
+      }
+    ]);
   }
 
   /**
