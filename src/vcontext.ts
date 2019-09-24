@@ -1,5 +1,5 @@
 import { Source, SourceReference } from "./source";
-import { VNode, VNodeRepresentationSource } from "./vnode";
+import { FragmentVNode, VNode, VNodeRepresentationSource } from "./vnode";
 import { VContextEvents } from "./vcontext-events";
 import { Tree } from "./tree";
 
@@ -24,7 +24,7 @@ export interface VContext {
    * @param source
    * @param options
    */
-  createVNode?: <O extends object>(source: Source<O>, options: O) => undefined | AsyncIterable<VNode>;
+  createVNode?: <O extends object>(source: Source<O>, options: O) => undefined | FragmentVNode;
   /**
    * This function is invoked during {@link children}, it allows a {@link VContext} to override this functionality
    *

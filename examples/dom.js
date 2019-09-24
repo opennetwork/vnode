@@ -52,7 +52,7 @@ const promise = asyncExtendedIterable(currentContext.eventsTarget.hydrate)
     console.log({ hydrate });
   });
 
-const nodes = h(
+const node = h(
   async function *() {
     console.log("Start");
     yield html`
@@ -77,7 +77,7 @@ const nodes = h(
     console.log("Next will be an async function");
     yield async () => "async fn";
     console.log("Next will be a node itself");
-    yield* h(
+    yield h(
       async function *(options, children) {
         yield "node result 1";
         yield "node result 2";
@@ -150,12 +150,7 @@ const nodes = h(
   }
 );
 
-const nodesIterator = nodes[Symbol.asyncIterator]();
-
-asyncExtendedIterable(nodesIterator)
-  .forEach(async value => {
-    await hydrate(currentContext, value);
-  })
+hydrate(currentContext, node)
   .then(() => {
     console.log("Completed hydrating");
     return currentContext.close();

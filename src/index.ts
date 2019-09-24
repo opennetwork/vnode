@@ -30,7 +30,7 @@ export * from "./marshal";
  * @param options
  * @param children
  */
-export function createVNode<O extends object>(context: VContext, source: Source<O>, options?: O, ...children: VNodeRepresentationSource[]): AsyncIterable<VNode> {
+export function createVNode<O extends object>(context: VContext, source: Source<O>, options?: O, ...children: VNodeRepresentationSource[]): VNode {
   return createVNodeWithContext(context, source, options, ...children);
 }
 
@@ -43,7 +43,7 @@ export function createVNode<O extends object>(context: VContext, source: Source<
  * @param context
  */
 export function withContext(context: VContext) {
-  return function createVNodeWithContext<O extends object>(source: Source<O>, options?: O, ...children: VNodeRepresentationSource[]): AsyncIterable<VNode> {
+  return function createVNodeWithContext<O extends object>(source: Source<O>, options?: O, ...children: VNodeRepresentationSource[]): VNode {
     return createVNode(context, source, options, ...children);
   };
 }

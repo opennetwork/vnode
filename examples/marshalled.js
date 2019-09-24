@@ -8,7 +8,7 @@ const context = {
   }
 };
 
-const instance = createVNode(
+const node = createVNode(
   context,
   {
     reference: 1,
@@ -66,8 +66,7 @@ const instance = createVNode(
   {}
 );
 
-asyncExtendedIterable(instance)
-  .forEach(node => hydrate(context, node))
+hydrate(context, node)
   .then(() => console.log("Complete"))
   .catch(error => console.error(error));
 

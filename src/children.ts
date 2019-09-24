@@ -6,8 +6,7 @@ import {
   asyncExtendedIterable,
   asyncIterable,
   isIterableIterator,
-  isPromise,
-  isTransientAsyncIteratorSource
+  isPromise
 } from "iterable";
 import { Fragment } from "./fragment";
 
@@ -39,19 +38,13 @@ export async function *children(context: VContext, ...source: VNodeRepresentatio
     }
 
     // These need further processing through createVNodeWithContext
-    if (isSourceReference(source) || isMarshalledVNode(source)) {
+    if (isSourceReference(source) || isMarshalledVNode(source) || isIterableIterator(source)) {
       return yield* eachSource(createVNodeWithContext(context, source));
     }
 
-    if (isIterableIterator(source) || isTransientAsyncIteratorSource(source)) {
-      for await (const result of asyncIterable(source)) {
-        yield* eachSource(result);
-      }
-    } else {
-      return yield* childrenUnion(
-        asyncExtendedIterable(source).map(source => children(context, source))
-      );
-    }
+    return yield* childrenUnion(
+      asyncExtendedIterable(source).map(source => children(context, source))
+    );
   }
 
   if (source.length === 1) {

@@ -1,5 +1,4 @@
 import { createVNode, marshal, hydrateChildren } from "../dist/index.js";
-import { asyncExtendedIterable } from "iterable";
 
 const context = {
   hydrate: async (node, tree) => {
@@ -8,7 +7,7 @@ const context = {
   }
 };
 
-const instance = createVNode(
+const node = createVNode(
   context,
   {
     reference: 1,
@@ -66,8 +65,8 @@ const instance = createVNode(
   {}
 );
 
-asyncExtendedIterable(instance)
-  .forEach(async node => console.log("Marshalled", JSON.stringify(await marshal(node), null, "  ")))
+marshal(node)
+  .then(node => console.log("Marshalled", JSON.stringify(node, null, "  ")))
   .then(() => console.log("Complete"))
   .catch(error => console.error(error));
 
