@@ -179,12 +179,27 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
   async function *generator(newReference: SourceReference, reference: IterableIterator<SourceReference> | AsyncIterableIterator<SourceReference>): AsyncIterable<AsyncIterable<VNode>> {
     const childrenInstance = childrenGenerator(context, ...children);
     let next: IteratorResult<SourceReference>;
+    let workingOptions = options;
+    if (!isReferenceOptions(options)) {
+      workingOptions = {
+        ...options,
+        reference: Symbol("VNode")
+      };
+    }
     do {
       next = await getNext(reference, newReference);
-      if (!next.done) {
-        yield asyncIterable([
-          createVNodeWithContext(context, next.value, options, childrenInstance)
-        ]);
+      if (next.done) {
+        continue;
+      }
+      const node = createVNodeWithContext(context, next.value, workingOptions, childrenInstance);
+      if (!isFragmentVNode(node) || !node.children) {
+        // Let it do its thing
+        yield asyncIterable([node]);
+        continue;
+      }
+      // Flatten it out a little as we can match the expected structure
+      for await (const children of node.children) {
+        yield children;
       }
     } while (!next.done);
   }
@@ -258,11 +273,18 @@ function getReference(context: VContext, options?: object) {
   return fromContext || Symbol("VNode");
 }
 
-function getReferenceFromOptions(options: object | undefined): SourceReference {
-  function isReferenceOptions(options: object): options is object & { reference?: unknown } {
+function isReferenceOptions(options: object): options is object & { reference: SourceReference } {
+  function isReferenceOptionsLike(options: object): options is object & { reference?: unknown } {
     return options && options.hasOwnProperty("reference");
   }
-  if (!(isReferenceOptions(options) && isSourceReference(options.reference))) {
+  return (
+    isReferenceOptionsLike(options) &&
+    isSourceReference(options.reference)
+  );
+}
+
+function getReferenceFromOptions(options: object | undefined): SourceReference {
+  if (!isReferenceOptions(options)) {
     return undefined;
   }
   return options.reference;
