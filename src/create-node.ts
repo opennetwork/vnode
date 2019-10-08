@@ -84,6 +84,14 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
   }
 
   /**
+   * If we have a fragment then we want to pass it back through our function so the next
+   * statement is invoked to handle fragments with children
+   */
+  if (source === Fragment) {
+    return createVNodeWithContext(context, { reference: Fragment }, options, ...children);
+  }
+
+  /**
    * This allows fragments to be extended with children
    */
   if (isFragmentVNode(source) && !source.children) {
