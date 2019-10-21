@@ -1,6 +1,5 @@
-import { isSourceReference, SourceReference, MarshalledSourceReference } from "./source";
+import { isSourceReference, SourceReference, MarshalledSourceReference } from "./source-reference";
 import { isAsyncIterable, AsyncIterableLike, isIterable } from "iterable";
-import { VContext } from "./vcontext";
 import { Fragment } from "./fragment";
 
 /**

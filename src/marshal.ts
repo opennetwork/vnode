@@ -1,5 +1,5 @@
 import { MarshalledVNode, VNode } from "./vnode";
-import { isMarshalledSourceReference, MarshalledSourceReference, SourceReference } from "./source";
+import { isMarshalledSourceReference, MarshalledSourceReference, SourceReference } from "./source-reference";
 import { asyncExtendedIterable } from "iterable";
 
 /**
