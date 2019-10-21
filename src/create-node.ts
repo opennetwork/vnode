@@ -10,7 +10,7 @@ import {
   FragmentVNode,
   isFragmentVNode,
   isMarshalledVNode,
-  isVNode,
+  isVNode, MarshalledVNode,
   VNode,
   VNodeRepresentationSource
 } from "./vnode";
@@ -169,6 +169,8 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
     return { reference: Fragment };
   }
 
+  console.log(source, isVNode(source));
+
   /**
    * We _shouldn't_ get here AFAIK, each kind of source should have been dealt with by the time we get here
    */
@@ -187,19 +189,12 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
   async function *generator(newReference: SourceReference, reference: IterableIterator<SourceReference> | AsyncIterableIterator<SourceReference>): AsyncIterable<AsyncIterable<VNode>> {
     const childrenInstance = childrenGenerator(context, ...children);
     let next: IteratorResult<SourceReference>;
-    let workingOptions = options;
-    if (!isReferenceOptions(options)) {
-      workingOptions = {
-        ...options,
-        reference: Symbol("VNode")
-      };
-    }
     do {
       next = await getNext(reference, newReference);
       if (next.done) {
         continue;
       }
-      const node = createVNodeWithContext(context, next.value, workingOptions, childrenInstance);
+      const node = createVNodeWithContext(context, next.value, options, childrenInstance);
       if (!isFragmentVNode(node) || !node.children) {
         // Let it do its thing
         yield asyncIterable([node]);
@@ -229,12 +224,12 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
     ]);
   }
 
-  async function *unmarshalGenerator(source: VNode): AsyncIterable<AsyncIterable<VNode>> {
+  async function *unmarshalGenerator(source: MarshalledVNode): AsyncIterable<AsyncIterable<VNode>> {
     yield asyncIterable([
       unmarshal(source)
     ]);
 
-    function unmarshal(source: VNode | MarshalledSourceReference): VNode {
+    function unmarshal(source: MarshalledVNode | MarshalledSourceReference): VNode {
       if (isSourceReference(source)) {
         return sourceReferenceVNode(getReference(context), source);
       }
