@@ -49,8 +49,8 @@ export interface VNode {
  * Children can be represented as a synchronous iterable such as an array, which then utilises synchronous iterables
  * for each update list of children
  */
-export type MarshalledVNode = Omit<VNode, "children"> & {
-  reference: MarshalledSourceReference;
+export type MarshalledVNode = Omit<VNode, "children" | "reference"> & {
+  reference?: MarshalledSourceReference;
   children: Iterable<Iterable<MarshalledVNode | MarshalledSourceReference>>;
 };
 
@@ -114,7 +114,7 @@ export type BasicVNodeRepresentation = VNodeRepresentation | AsyncIterableLike<V
  */
 export type VNodeRepresentationSource = BasicVNodeRepresentation | AsyncIterableLike<BasicVNodeRepresentation>;
 
-function isVNodeLike(value: unknown): value is { reference: unknown, children: unknown, options: unknown } {
+function isVNodeLike(value: unknown): value is Partial<VNode> {
   return typeof value === "object";
 }
 
@@ -123,7 +123,7 @@ function isVNodeLike(value: unknown): value is { reference: unknown, children: u
  * @param value
  */
 export function isVNode(value: unknown): value is VNode {
-  return (
+  return !!(
     isVNodeLike(value) &&
     isSourceReference(value.reference) &&
     (
