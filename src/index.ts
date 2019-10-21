@@ -19,6 +19,7 @@ export * from "./children";
 export * from "./create-node";
 export * from "./tree";
 export * from "./marshal";
+export * from "./source-reference";
 
 /**
  * Generates instances of {@link VNode} based on the provided source
