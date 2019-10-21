@@ -1,4 +1,4 @@
-import { SourceReference } from "./source";
+import { SourceReference } from "./source-reference";
 
 /**
  * A tree representing a {@link VNode}'s location in a tree

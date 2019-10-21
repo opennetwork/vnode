@@ -1,7 +1,6 @@
 import { VContext } from "./vcontext";
 import { isMarshalledVNode, isVNode, VNode, VNodeRepresentationSource } from "./vnode";
-import { isSourceReference } from "./source";
-import { createVNodeWithContext } from "./create-node";
+import { isSourceReference } from "./source-reference";
 import {
   asyncExtendedIterable,
   asyncIterable,
@@ -9,6 +8,7 @@ import {
   isPromise
 } from "iterable";
 import { Fragment } from "./fragment";
+import { Source } from "./source";
 
 async function* childrenUnion(childrenGroups: AsyncIterable<AsyncIterable<AsyncIterable<VNode>>>): AsyncIterable<AsyncIterable<VNode>> {
   yield asyncExtendedIterable(childrenGroups)
@@ -18,7 +18,7 @@ async function* childrenUnion(childrenGroups: AsyncIterable<AsyncIterable<AsyncI
     }));
 }
 
-export async function *children(context: VContext, ...source: VNodeRepresentationSource[]): AsyncIterable<AsyncIterable<VNode>> {
+export async function *children(createVNode: (context: VContext, source: Source<never>) => VNode, context: VContext, ...source: VNodeRepresentationSource[]): AsyncIterable<AsyncIterable<VNode>> {
   if (context.children) {
     const result = context.children(source);
     if (result) {
@@ -39,11 +39,11 @@ export async function *children(context: VContext, ...source: VNodeRepresentatio
 
     // These need further processing through createVNodeWithContext
     if (isSourceReference(source) || isMarshalledVNode(source) || isIterableIterator(source)) {
-      return yield* eachSource(createVNodeWithContext(context, source));
+      return yield* eachSource(createVNode(context, source));
     }
 
     return yield* childrenUnion(
-      asyncExtendedIterable(source).map(source => children(context, source))
+      asyncExtendedIterable(source).map(source => children(createVNode, context, source))
     );
   }
 

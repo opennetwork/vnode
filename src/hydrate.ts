@@ -1,8 +1,7 @@
 import { VContext } from "./vcontext";
 import { VNode } from "./vnode";
-import { asyncExtendedIterable, AsyncIterableLike, asyncIterator } from "iterable";
+import { asyncExtendedIterable, AsyncIterableLike } from "iterable";
 import { Tree } from "./tree";
-import { Fragment } from "./fragment";
 
 /**
  * Hydrates a group of children obtained from {@link VNode.children}

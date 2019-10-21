@@ -1,11 +1,13 @@
 import { VContext } from "./vcontext";
 import {
+  Source,
+  SourceReferenceRepresentationFactory
+} from "./source";
+import {
   isSourceReference,
   SourceReference,
-  Source,
-  SourceReferenceRepresentationFactory,
   MarshalledSourceReference
-} from "./source";
+} from "./source-reference";
 import {
   FragmentVNode,
   isFragmentVNode,
@@ -90,7 +92,7 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
     // If a fragment has no children then we will attach our children to it
     return {
       ...source,
-      children: childrenGenerator(context, ...children)
+      children: childrenGenerator(createVNodeWithContext, context, ...children)
     };
   }
 
@@ -147,10 +149,10 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
    * We will create a `Fragment` that holds our node state to grab later
    */
   if (isIterable(source) || isAsyncIterable(source)) {
-    const childrenInstance = childrenGenerator(context, ...children);
+    const childrenInstance = childrenGenerator(createVNodeWithContext, context, ...children);
     return {
       reference: Fragment,
-      children: childrenGenerator(context, asyncExtendedIterable(source).map(value => createVNodeWithContext(context, value, options, childrenInstance)))
+      children: childrenGenerator(createVNodeWithContext, context, asyncExtendedIterable(source).map(value => createVNodeWithContext(context, value, options, childrenInstance)))
     };
   }
 
@@ -160,8 +162,6 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
   if (!source) {
     return { reference: Fragment };
   }
-
-  console.log(source, isVNode(source));
 
   /**
    * We _shouldn't_ get here AFAIK, each kind of source should have been dealt with by the time we get here
@@ -179,7 +179,7 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
    * @param reference
    */
   async function *generator(newReference: SourceReference, reference: IterableIterator<SourceReference> | AsyncIterableIterator<SourceReference>): AsyncIterable<AsyncIterable<VNode>> {
-    const childrenInstance = childrenGenerator(context, ...children);
+    const childrenInstance = childrenGenerator(createVNodeWithContext, context, ...children);
     let next: IteratorResult<SourceReference>;
     do {
       next = await getNext(reference, newReference);
@@ -209,7 +209,7 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
   async function *functionGenerator(source: SourceReferenceRepresentationFactory<O>): AsyncIterable<AsyncIterable<VNode>> {
     const nextSource = source(options, {
       reference: Fragment,
-      children: childrenGenerator(context, ...children)
+      children: childrenGenerator(createVNodeWithContext, context, ...children)
     });
     yield asyncIterable([
       createVNodeWithContext(context, nextSource, options, undefined)
@@ -249,7 +249,7 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
       scalar: true,
       source: source,
       options,
-      children: childrenGenerator(context, ...children)
+      children: childrenGenerator(createVNodeWithContext, context, ...children)
     };
   }
 
@@ -265,7 +265,7 @@ function getMarshalledReference(context: VContext, reference: MarshalledSourceRe
 function getReference(context: VContext, options?: object) {
   const fromOptions = getReferenceFromOptions(options);
   const fromContext = context.reference ? context.reference(fromOptions) : fromOptions;
-  return fromContext || Symbol("VNode");
+  return fromContext || Symbol("@opennetwork/vnode");
 }
 
 function isReferenceOptions(options: object): options is object & { reference: SourceReference } {

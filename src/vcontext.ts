@@ -1,4 +1,5 @@
-import { Source, SourceReference } from "./source";
+import { Source } from "./source";
+import { SourceReference } from "./source-reference";
 import { FragmentVNode, VNode, VNodeRepresentationSource } from "./vnode";
 import { VContextEvents } from "./vcontext-events";
 import { Tree } from "./tree";
