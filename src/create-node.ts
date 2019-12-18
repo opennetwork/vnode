@@ -214,14 +214,18 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
     ]);
   }
 
-  async function *functionGenerator(source: SourceReferenceRepresentationFactory<O>): AsyncIterable<AsyncIterable<VNode>> {
-    const nextSource = source(options, {
-      reference: Fragment,
-      children: childrenGenerator(createVNodeWithContext, context, ...children)
-    });
-    yield asyncIterable([
-      createVNodeWithContext(context, nextSource, options, undefined)
-    ]);
+  function functionGenerator(source: SourceReferenceRepresentationFactory<O>): AsyncIterable<AsyncIterable<VNode>> {
+    return {
+      async *[Symbol.asyncIterator]() {
+        const nextSource = source(options, {
+          reference: Fragment,
+          children: childrenGenerator(createVNodeWithContext, context, ...children)
+        });
+        yield asyncIterable([
+          createVNodeWithContext(context, nextSource, options, undefined)
+        ]);
+      }
+    };
   }
 
   async function *unmarshalGenerator(source: MarshalledVNode): AsyncIterable<AsyncIterable<VNode>> {
