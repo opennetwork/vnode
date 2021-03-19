@@ -223,8 +223,9 @@ iterable@^5.2.2:
   integrity sha512-QsXb9q65zwEtJMI0YWPdQYg9pwjW0v1o5eoLm1kdmUQNENz0l4q6o3ZCG8TrOxv0F9eKmDYx2/nvI8TrvNYCHg==
 
 jquery@^3.4.1:
-  version "3.4.1"
-  resolved "https://registry.npmjs.org/jquery/-/jquery-3.4.1.tgz#714f1f8d9dde4bdfa55764ba37ef214630d80ef2"
+  version "3.6.0"
+  resolved "https://registry.yarnpkg.com/jquery/-/jquery-3.6.0.tgz#c72a09f15c1bdce142f49dbf1170bdf8adac2470"
+  integrity sha512-JVzAR/AjBvVt2BmYhxRCSYysDsPcssdmTFnzyLEts9qNwmjmu4JTAMYubEfwVOSwpQ1I1sKKFcxhZCI2buerfw==
 
 js-tokens@^4.0.0:
   version "4.0.0"
