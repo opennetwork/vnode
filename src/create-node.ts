@@ -65,10 +65,7 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
    * The function _may_ return any other kind of source, so we need to start our process again
    */
   if (source instanceof Function) {
-    return {
-      reference: Fragment,
-      children: functionGenerator(source)
-    };
+    return functionVNode(source);
   }
 
   /**
@@ -204,18 +201,12 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
     ]);
   }
 
-  function functionGenerator(source: SourceReferenceRepresentationFactory<O>): AsyncIterable<ReadonlyArray<VNode>> {
-    return {
-      async *[Symbol.asyncIterator]() {
-        const nextSource = source(options, {
-          reference: Fragment,
-          children: childrenGenerator(createVNodeWithContext, context, ...children)
-        });
-        yield Object.freeze([
-          createVNodeWithContext(context, nextSource, options, undefined)
-        ]);
-      }
-    };
+  function functionVNode(source: SourceReferenceRepresentationFactory<O>): VNode {
+    const nextSource = source(options, {
+      reference: Fragment,
+      children: childrenGenerator(createVNodeWithContext, context, ...children)
+    });
+    return createVNodeWithContext(context, nextSource, options, undefined);
   }
 
   function unmarshal(source: MarshalledVNode): VNode {
