@@ -33,7 +33,7 @@ export interface VContext {
    * @param source
    * @param options
    */
-  children?: (children: VNodeRepresentationSource[]) => undefined | AsyncIterable<AsyncIterable<VNode>>;
+  children?: (children: VNodeRepresentationSource[]) => undefined | AsyncIterable<Iterable<VNode>>;
   /**
    * This function is invoked by {@link hydrate}
    *

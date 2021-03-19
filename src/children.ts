@@ -1,38 +1,58 @@
 import { VContext } from "./vcontext";
-import { isMarshalledVNode, isVNode, VNode, VNodeRepresentationSource } from "./vnode";
+import { isFragmentVNode, isMarshalledVNode, isVNode, VNode, VNodeRepresentationSource } from "./vnode";
 import { isSourceReference } from "./source-reference";
 import {
   asyncExtendedIterable,
-  asyncIterable,
   isIterableIterator,
   isPromise
 } from "iterable";
-import { Fragment } from "./fragment";
 import { Source } from "./source";
+import { latest, merge } from "@opennetwork/progressive-merge";
 
-async function* childrenUnion(childrenGroups: AsyncIterable<AsyncIterable<AsyncIterable<VNode>>>): AsyncIterable<AsyncIterable<VNode>> {
-  yield asyncExtendedIterable(childrenGroups)
-    .map(children => ({
-      reference: Fragment,
-      children
-    }));
+interface ChildrenUpdateArray extends ReadonlyArray<VNode> {
+  parts: ReadonlyArray<ReadonlyArray<VNode>>;
 }
 
-export async function *children(createVNode: (context: VContext, source: Source<never>) => VNode, context: VContext, ...source: VNodeRepresentationSource[]): AsyncIterable<AsyncIterable<VNode>> {
+export function isChildrenUpdateArray(array: ReadonlyArray<VNode>): array is ChildrenUpdateArray {
+  function isChildrenUpdateArrayLike(array: unknown): array is { parts: unknown } {
+    return Array.isArray(array);
+  }
+  return isChildrenUpdateArrayLike(array) && isChildrenUpdateArrayLike(array.parts);
+}
+
+async function* childrenUnion(childrenGroups: AsyncIterable<AsyncIterable<ReadonlyArray<VNode>>>): AsyncIterable<ReadonlyArray<VNode>> {
+  for await (const parts of latest(merge(childrenGroups))) {
+    const updates: ReadonlyArray<VNode> & { parts?: unknown } = parts.reduce(
+      (updates: VNode[], part: VNode[]) => updates.concat(part),
+      []
+    );
+    updates.parts = Object.freeze(parts);
+    yield updates;
+  }
+}
+
+export async function *children(createVNode: (context: VContext, source: Source<never>) => VNode, context: VContext, ...source: VNodeRepresentationSource[]): AsyncIterable<ReadonlyArray<VNode>> {
   if (context.children) {
     const result = context.children(source);
     if (result) {
-      return yield* result;
+      for await (const update of result) {
+        yield Object.freeze(Array.isArray(update) ? update : [...update]);
+      }
+      return;
     }
   }
 
-  async function *eachSource(source: VNodeRepresentationSource): AsyncIterable<AsyncIterable<VNode>> {
+  async function *eachSource(source: VNodeRepresentationSource): AsyncIterable<ReadonlyArray<VNode>> {
     if (isPromise(source)) {
       return yield* eachSource(await source);
     }
 
+    if (isFragmentVNode(source)) {
+      return yield* source.children;
+    }
+
     if (isVNode(source)) {
-      return yield asyncIterable([
+      return yield Object.freeze([
         source
       ]);
     }

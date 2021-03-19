@@ -22,8 +22,7 @@ import {
   isPromise,
   asyncExtendedIterable,
   isIterableIterator,
-  getNext,
-  asyncIterable
+  getNext
 } from "iterable";
 import { children as childrenGenerator } from "./children";
 import { Fragment } from "./fragment";
@@ -186,7 +185,7 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
    * @param newReference
    * @param reference
    */
-  async function *generator(newReference: SourceReference, reference: IterableIterator<SourceReference> | AsyncIterableIterator<SourceReference>): AsyncIterable<AsyncIterable<VNode>> {
+  async function *generator(newReference: SourceReference, reference: IterableIterator<SourceReference> | AsyncIterableIterator<SourceReference>): AsyncIterable<ReadonlyArray<VNode>> {
     const childrenInstance = childrenGenerator(createVNodeWithContext, context, ...children);
     let next: IteratorResult<SourceReference>;
     do {
@@ -197,39 +196,36 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
       const node = createVNodeWithContext(context, next.value, options, childrenInstance);
       if (!isFragmentVNode(node) || !node.children) {
         // Let it do its thing
-        yield asyncIterable([node]);
-        continue;
-      }
-      // Flatten it out a little as we can match the expected structure
-      for await (const children of node.children) {
-        yield children;
+        yield Object.freeze([node]);
+      } else {
+        yield* node.children;
       }
     } while (!next.done);
   }
 
-  async function *promiseGenerator(promise: Promise<SourceReference | VNode>): AsyncIterable<AsyncIterable<VNode>> {
+  async function *promiseGenerator(promise: Promise<SourceReference | VNode>): AsyncIterable<ReadonlyArray<VNode>> {
     const result = await promise;
-    yield asyncIterable([
+    yield Object.freeze([
       createVNodeWithContext(context, result, options, ...children)
     ]);
   }
 
-  function functionGenerator(source: SourceReferenceRepresentationFactory<O>): AsyncIterable<AsyncIterable<VNode>> {
+  function functionGenerator(source: SourceReferenceRepresentationFactory<O>): AsyncIterable<ReadonlyArray<VNode>> {
     return {
       async *[Symbol.asyncIterator]() {
         const nextSource = source(options, {
           reference: Fragment,
           children: childrenGenerator(createVNodeWithContext, context, ...children)
         });
-        yield asyncIterable([
+        yield Object.freeze([
           createVNodeWithContext(context, nextSource, options, undefined)
         ]);
       }
     };
   }
 
-  async function *unmarshalGenerator(source: MarshalledVNode): AsyncIterable<AsyncIterable<VNode>> {
-    yield asyncIterable([
+  async function *unmarshalGenerator(source: MarshalledVNode): AsyncIterable<ReadonlyArray<VNode>> {
+    yield Object.freeze([
       unmarshal(source)
     ]);
 
@@ -244,13 +240,13 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
         ...source,
         // Replace our reference if required
         reference: isSourceReference(source.reference) ? getMarshalledReference(context, source.reference) : getReference(context, source.options),
-        children: asyncExtendedIterable(source.children).map(children => asyncExtendedIterable(children).map(unmarshal).toIterable()).toIterable()
+        children: asyncExtendedIterable(source.children).map(children => Object.freeze([...children].map(unmarshal))).toIterable()
       };
     }
   }
 
-  async function *sourceReferenceGenerator(reference: SourceReference, source: SourceReference, options?: object, ...children: VNodeRepresentationSource[]): AsyncIterable<AsyncIterable<VNode>> {
-    yield asyncIterable([
+  async function *sourceReferenceGenerator(reference: SourceReference, source: SourceReference, options?: object, ...children: VNodeRepresentationSource[]): AsyncIterable<ReadonlyArray<VNode>> {
+    yield Object.freeze([
       sourceReferenceVNode(reference, source, options, ...children)
     ]);
   }

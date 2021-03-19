@@ -1,6 +1,5 @@
 import { VContext } from "./vcontext";
 import { VNode } from "./vnode";
-import { asyncExtendedIterable, AsyncIterableLike } from "iterable";
 import { Tree } from "./tree";
 
 /**
@@ -13,16 +12,7 @@ import { Tree } from "./tree";
  * @param tree
  * @param children
  */
-export async function hydrateChildrenGroup(context: VContext, node: VNode, tree: Tree | undefined, children: AsyncIterableLike<VNode>) {
-  /**
-   * We want to grab the snapshot of the current children into an array
-   * This allows us to trigger the entire tree to hydrate at the same time meaning
-   * we don't need to wait for "slow" nodes
-   *
-   * Get us much done as we can as quick as we can
-   */
-  const childrenArray = await asyncExtendedIterable(children).toArray();
-
+export async function hydrateChildrenGroup(context: VContext, node: VNode, tree: Tree | undefined, children: ReadonlyArray<VNode>) {
   /**
    * Create a tree so that hydrators can "figure out" where they are
    *
@@ -35,8 +25,7 @@ export async function hydrateChildrenGroup(context: VContext, node: VNode, tree:
    */
   const nextTree: Tree = Object.freeze({
     children: Object.freeze(
-      childrenArray
-        .map(child => child ? child.reference : undefined)
+      children.map(child => child ? child.reference : undefined)
     ),
     parent: tree,
     reference: node.reference
@@ -46,7 +35,7 @@ export async function hydrateChildrenGroup(context: VContext, node: VNode, tree:
    * Wait for all children to hydrate
    */
   await Promise.all(
-    childrenArray.map(child => hydrate(context, child, nextTree))
+    children.map(child => hydrate(context, child, nextTree))
   );
 }
 
