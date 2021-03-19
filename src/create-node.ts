@@ -115,10 +115,7 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
    * and ensure they're unmarshalled
    */
   if (isMarshalledVNode(source)) {
-    return {
-      reference: Fragment,
-      children: unmarshalGenerator(source)
-    };
+    return unmarshal(source);
   }
 
   const reference = getReference(context, options);
@@ -132,10 +129,7 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
    * Either way, if we have a source reference, we have a primitive value that we can look up later on
    */
   if (isSourceReference(source)) {
-    return {
-      reference: Fragment,
-      children: sourceReferenceGenerator(reference, source, options, ...children)
-    };
+    return sourceReferenceVNode(reference, source, options, ...children);
   }
 
   /**
@@ -224,31 +218,16 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
     };
   }
 
-  async function *unmarshalGenerator(source: MarshalledVNode): AsyncIterable<ReadonlyArray<VNode>> {
-    yield Object.freeze([
-      unmarshal(source)
-    ]);
-
-    function unmarshal(source: MarshalledVNode | MarshalledSourceReference): VNode {
-      if (isSourceReference(source)) {
-        return sourceReferenceVNode(getReference(context), source);
-      }
-      if (!isMarshalledVNode(source)) {
-        return source;
-      }
-      return {
-        ...source,
-        // Replace our reference if required
-        reference: isSourceReference(source.reference) ? getMarshalledReference(context, source.reference) : getReference(context, source.options),
-        children: asyncExtendedIterable(source.children).map(children => Object.freeze([...children].map(unmarshal))).toIterable()
-      };
+  function unmarshal(source: MarshalledVNode): VNode {
+    if (isSourceReference(source)) {
+      return sourceReferenceVNode(getReference(context), source);
     }
-  }
-
-  async function *sourceReferenceGenerator(reference: SourceReference, source: SourceReference, options?: object, ...children: VNodeRepresentationSource[]): AsyncIterable<ReadonlyArray<VNode>> {
-    yield Object.freeze([
-      sourceReferenceVNode(reference, source, options, ...children)
-    ]);
+    return {
+      ...source,
+      // Replace our reference if required
+      reference: isSourceReference(source.reference) ? getMarshalledReference(context, source.reference) : getReference(context, source.options),
+      children: asyncExtendedIterable(source.children).map(children => Object.freeze([...children].map(unmarshal))).toIterable()
+    };
   }
 
   function sourceReferenceVNode(reference: SourceReference, source: SourceReference, options?: object, ...children: VNodeRepresentationSource[]): VNode {
