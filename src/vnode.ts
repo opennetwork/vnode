@@ -13,10 +13,10 @@ export interface VNode {
    */
   reference: SourceReference;
   /**
-   * An `AsyncIterable` that will return a `AsyncIterable<VNode>` that represents a group of children updates
+   * An `AsyncIterable` that will return a `ReadonlyArray<VNode>` that represents a group of children updates
    * Each iteration represents an update to the {@link VNode}'s children state
    */
-  children?: AsyncIterable<AsyncIterable<VNode>>;
+  children?: AsyncIterable<ReadonlyArray<VNode>>;
   /**
    * The resolved source for the {@link VNode}
    *
