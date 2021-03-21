@@ -16,12 +16,10 @@
     esutils "^2.0.2"
     js-tokens "^4.0.0"
 
-"@opennetwork/progressive-merge@^3.1.1":
-  version "3.1.1"
-  resolved "https://registry.npmjs.org/@opennetwork/progressive-merge/-/progressive-merge-3.1.1.tgz#a1dc19708cbcb17d23783bc66cc27d2a1afeee26"
-  integrity sha512-lNiUafqi3G6ag0BPJHyYNA3YC0z5QiExqjfxk982Sn/Sc+eNLF4P+iL4u3wXAxTsHjWrC6otr4DR7a+yogCjHA==
-  dependencies:
-    microtask-collector "^1.0.4"
+"@opennetwork/progressive-merge@^4.0.1":
+  version "4.0.1"
+  resolved "https://registry.npmjs.org/@opennetwork/progressive-merge/-/progressive-merge-4.0.1.tgz#f50e409018acb772a8f162ec33ac5d0bfd58d895"
+  integrity sha512-iSqWKH2NiX+2No7/Pd6SJPgLUSF8lmikQXqzOUiVmE8/w1kVkr2ZbH4QBG6OQj65bTKgm/Jm9sMk3dsDZKJMwg==
 
 "@opennetwork/vnode-test@^1.0.3":
   version "1.0.3"
@@ -254,11 +252,6 @@ lunr@^2.3.6:
 marked@^0.7.0:
   version "0.7.0"
   resolved "https://registry.npmjs.org/marked/-/marked-0.7.0.tgz#b64201f051d271b1edc10a04d1ae9b74bb8e5c0e"
-
-microtask-collector@^1.0.4:
-  version "1.0.4"
-  resolved "https://registry.npmjs.org/microtask-collector/-/microtask-collector-1.0.4.tgz#c92751f5171d55477cae7b613435b735b326fdd3"
-  integrity sha512-j49//GFbQnRTZSrKgmgp5q1SAewmr9+ZQ4+Ta6jf7CS29Z8POqNrI99X3ztz1SZqFjr9kMzZQjy7+T1X33KgIA==
 
 minimatch@^3.0.0, minimatch@^3.0.3, minimatch@^3.0.4:
   version "3.0.4"

@@ -130,6 +130,7 @@ const node = h(
 
           let count = 0;
           let interval = setInterval(() => {
+            console.log("interval");
             count += 1;
             nextSource.push(`next interval 3 ${count}`);
             if (count > 2) {

@@ -7,27 +7,14 @@ import {
   isPromise
 } from "iterable";
 import { Source } from "./source";
-import { latest, merge } from "@opennetwork/progressive-merge";
+import { MergeLaneInput, merge } from "@opennetwork/progressive-merge";
 
-interface ChildrenUpdateArray extends ReadonlyArray<VNode> {
-  parts: ReadonlyArray<ReadonlyArray<VNode>>;
-}
-
-export function isChildrenUpdateArray(array: ReadonlyArray<VNode>): array is ChildrenUpdateArray {
-  function isChildrenUpdateArrayLike(array: unknown): array is { parts: unknown } {
-    return Array.isArray(array);
-  }
-  return isChildrenUpdateArrayLike(array) && isChildrenUpdateArrayLike(array.parts);
-}
-
-async function* childrenUnion(childrenGroups: AsyncIterable<AsyncIterable<ReadonlyArray<VNode>>>): AsyncIterable<ReadonlyArray<VNode>> {
-  for await (const parts of latest(merge(childrenGroups))) {
-    const updates: ReadonlyArray<VNode> & { parts?: unknown } = parts.reduce(
-      (updates: VNode[], part: VNode[]) => updates.concat(part),
+async function* childrenUnion(childrenGroups: MergeLaneInput<ReadonlyArray<VNode>>): AsyncIterable<ReadonlyArray<VNode>> {
+  for await (const parts of merge(childrenGroups)) {
+    yield parts.reduce(
+      (updates: VNode[], part: (VNode | undefined)[]): VNode[] => updates.concat(part.filter(value => value)),
       []
     );
-    updates.parts = Object.freeze(parts);
-    yield updates;
   }
 }
 
@@ -70,6 +57,6 @@ export async function *children(createVNode: (context: VContext, source: Source<
   if (source.length === 1) {
     return yield* eachSource(source[0]);
   } else {
-    return yield* childrenUnion(asyncExtendedIterable(source).map(source => eachSource(source)));
+    return yield* childrenUnion(source.map(source => eachSource(source)));
   }
 }
