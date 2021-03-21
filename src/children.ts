@@ -50,13 +50,13 @@ export async function *children(createVNode: (context: VContext, source: Source<
     }
 
     return yield* childrenUnion(
-      asyncExtendedIterable(source).map(source => children(createVNode, context, source))
+      asyncExtendedIterable(source).map(eachSource)
     );
   }
 
   if (source.length === 1) {
     return yield* eachSource(source[0]);
   } else {
-    return yield* childrenUnion(source.map(source => eachSource(source)));
+    return yield* childrenUnion(source.map(eachSource));
   }
 }
