@@ -1,5 +1,5 @@
 import { AsyncIterableLike } from "iterable";
-import { FragmentVNode, VNodeRepresentationSource } from "./vnode";
+import { VNode, VNodeRepresentationSource } from "./vnode";
 import { SourceReference } from "./source-reference";
 
 /**
@@ -17,7 +17,7 @@ export type SourceReferenceRepresentation<O extends object> = AsyncSourceReferen
 /**
  * A function that resolves to a {@link SourceReferenceRepresentation} which can be further processed to obtain a group of {@link SourceReference} values
  */
-export type SourceReferenceRepresentationFactory<O extends object> = (options: O, children: FragmentVNode) => SourceReferenceRepresentation<O>;
+export type SourceReferenceRepresentationFactory<O extends object> = (options: O, children: VNode) => SourceReferenceRepresentation<O>;
 /**
  * A value that represents a {@link SourceReference}
  */
