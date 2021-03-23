@@ -29,8 +29,13 @@ export interface VContextEventsTarget extends VContextEvents {
   hydrate?: Collector<VContextHydrateEvent, ReadonlyArray<VContextHydrateEvent>>;
 }
 
+export interface VContextEventsPair {
+  target: VContextEventsTarget;
+  events: VContextEvents;
+}
 
-export function createVContextEvents(): { target: VContextEventsTarget, events: VContextEvents } {
+
+export function createVContextEvents(): VContextEventsPair {
   const target: VContextEventsTarget = {
     createVNode: new Collector<VContextCreateVNodeEvent, ReadonlyArray<VContextCreateVNodeEvent>>({
       map: Object.freeze

@@ -1,5 +1,5 @@
 import { VContext } from "./vcontext";
-import { VContextEvents, VContextEventsTarget, createVContextEvents } from "./vcontext-events";
+import { VContextEvents, VContextEventsTarget, createVContextEvents, VContextEventsPair } from "./vcontext-events";
 import { Source } from "./source";
 import { VNode, VNodeRepresentationSource } from "./vnode";
 import { Tree } from "./tree";
@@ -10,9 +10,8 @@ export class WeakVContext implements VContext {
   public readonly events: VContextEvents;
   protected readonly eventsTarget: VContextEventsTarget;
 
-  constructor(weak?: WeakMap<object, unknown>) {
+  constructor(weak?: WeakMap<object, unknown>, { events, target }: VContextEventsPair = createVContextEvents()) {
     this.weak = weak || new WeakMap<object, unknown>();
-    const { events, target } = createVContextEvents();
     this.events = events;
     this.eventsTarget = target;
   }
