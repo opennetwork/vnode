@@ -27,7 +27,7 @@ const native = {
 class DOMContext extends WeakVContext {
 
   async hydrate(node, tree) {
-    this.eventsTarget.hydrate.push({
+    this.eventsTarget.hydrate.add({
       node,
       tree
     });
