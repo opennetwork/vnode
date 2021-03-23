@@ -12,7 +12,7 @@ import { MergeLaneInput, merge } from "@opennetwork/progressive-merge";
 async function* childrenUnion(childrenGroups: MergeLaneInput<ReadonlyArray<VNode>>): AsyncIterable<ReadonlyArray<VNode>> {
   for await (const parts of merge(childrenGroups)) {
     yield parts.reduce(
-      (updates: VNode[], part: (VNode | undefined)[]): VNode[] => updates.concat(part.filter(value => value)),
+      (updates: VNode[], part: (VNode | undefined)[]): VNode[] => updates.concat((part || []).filter(value => value)),
       []
     );
   }
@@ -23,13 +23,17 @@ export async function *children(createVNode: (context: VContext, source: Source<
     const result = context.children(source);
     if (result) {
       for await (const update of result) {
-        yield Object.freeze(Array.isArray(update) ? update : [...update]);
+        yield Object.freeze(Array.isArray(update) ? update : update ? [...update] : []);
       }
       return;
     }
   }
 
   async function *eachSource(source: VNodeRepresentationSource): AsyncIterable<ReadonlyArray<VNode>> {
+    if (typeof source === "undefined") {
+      return;
+    }
+
     if (isPromise(source)) {
       return yield* eachSource(await source);
     }
