@@ -16,7 +16,8 @@
   "peerDependencies": {},
   "dependencies": {
     "@opennetwork/progressive-merge": "^4.0.3",
-    "iterable": "^5.2.2"
+    "iterable": "^5.2.2",
+    "microtask-collector": "^1.0.4"
   },
   "repository": {
     "type": "git",

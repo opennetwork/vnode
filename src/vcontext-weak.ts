@@ -18,7 +18,7 @@ export class WeakVContext implements VContext {
   }
 
   createVNode<O extends object>(source: Source<O>, options: O): undefined {
-    this.eventsTarget.createVNode.push({
+    this.eventsTarget.createVNode.add({
       source,
       options
     });
@@ -26,14 +26,14 @@ export class WeakVContext implements VContext {
   }
 
   children(children: VNodeRepresentationSource[]): undefined {
-    this.eventsTarget.children.push({
+    this.eventsTarget.children.add({
       children
     });
     return undefined;
   }
 
   hydrate(node: VNode, tree?: Tree): Promise<void> {
-    this.eventsTarget.hydrate.push({
+    this.eventsTarget.hydrate.add({
       node,
       tree
     });

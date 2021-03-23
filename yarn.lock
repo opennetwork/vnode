@@ -253,6 +253,11 @@ marked@^0.7.0:
   version "0.7.0"
   resolved "https://registry.npmjs.org/marked/-/marked-0.7.0.tgz#b64201f051d271b1edc10a04d1ae9b74bb8e5c0e"
 
+microtask-collector@^1.0.4:
+  version "1.0.4"
+  resolved "https://registry.npmjs.org/microtask-collector/-/microtask-collector-1.0.4.tgz#c92751f5171d55477cae7b613435b735b326fdd3"
+  integrity sha512-j49//GFbQnRTZSrKgmgp5q1SAewmr9+ZQ4+Ta6jf7CS29Z8POqNrI99X3ztz1SZqFjr9kMzZQjy7+T1X33KgIA==
+
 minimatch@^3.0.0, minimatch@^3.0.3, minimatch@^3.0.4:
   version "3.0.4"
   resolved "https://registry.npmjs.org/minimatch/-/minimatch-3.0.4.tgz#5166e286457f03306064be5497e8dbb0c3d32083"
