@@ -77,7 +77,7 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
   if (isPromise(source)) {
     return {
       reference: Fragment,
-      children: promiseGenerator(source)
+      children: replay(() => promiseGenerator(source))
     };
   }
 
@@ -96,7 +96,7 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
     // If a fragment has no children then we will attach our children to it
     return {
       ...source,
-      children: childrenGenerator(createVNodeWithContext, context, ...children)
+      children: replay(() => childrenGenerator(createVNodeWithContext, context, ...children))
     };
   }
 
@@ -132,6 +132,9 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
   /**
    * Here is our nice `IterableIterator` that allows us to produce multiple versions for the same source
    *
+   * This specifically cannot be re-run twice, but this is expected to be returned from a function, where
+   * functions can be run twice
+   *
    * See {@link generator} for details
    */
   if (isIterableIterator(source)) {
@@ -150,7 +153,7 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
     const childrenInstance = childrenGenerator(createVNodeWithContext, context, ...children);
     return {
       reference: Fragment,
-      children: childrenGenerator(createVNodeWithContext, context, asyncExtendedIterable(source).map(value => createVNodeWithContext(context, value, options, childrenInstance)))
+      children: replay(() => childrenGenerator(createVNodeWithContext, context, asyncExtendedIterable(source).map(value => createVNodeWithContext(context, value, options, childrenInstance))))
     };
   }
 
@@ -202,11 +205,17 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
   }
 
   function functionVNode(source: SourceReferenceRepresentationFactory<O>): VNode {
-    const nextSource = source(options, {
+    return {
       reference: Fragment,
-      children: childrenGenerator(createVNodeWithContext, context, ...children)
-    });
-    return createVNodeWithContext(context, nextSource, options, undefined);
+      children: replay(() => functionAsChildren())
+    };
+
+    async function *functionAsChildren(): AsyncIterable<ReadonlyArray<VNode>> {
+      const nextSource = source(options, createVNodeWithContext(context, Fragment, {}, ...children));
+      yield Object.freeze([
+        createVNodeWithContext(context, nextSource, options, undefined)
+      ]);
+    }
   }
 
   function unmarshal(source: MarshalledVNode): VNode {
@@ -217,7 +226,7 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
       ...source,
       // Replace our reference if required
       reference: isSourceReference(source.reference) ? getMarshalledReference(context, source.reference) : getReference(context, source.options),
-      children: asyncExtendedIterable(source.children).map(children => Object.freeze([...children].map(unmarshal))).toIterable()
+      children: replay(() => asyncExtendedIterable(source.children).map(children => Object.freeze([...children].map(unmarshal))).toIterable())
     };
   }
 
@@ -227,7 +236,13 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
       scalar: true,
       source: source,
       options,
-      children: childrenGenerator(createVNodeWithContext, context, ...children)
+      children: replay(() => childrenGenerator(createVNodeWithContext, context, ...children))
+    };
+  }
+
+  function replay<T>(fn: () => AsyncIterable<T>): AsyncIterable<T> {
+    return {
+      [Symbol.asyncIterator]: () => fn()[Symbol.asyncIterator]()
     };
   }
 
