@@ -13,11 +13,12 @@
     "prepublishOnly": "npm run build",
     "documentation": "typedoc --out ./documentation ./src --excludePrivate --theme minimal --mode file --excludeNotExported"
   },
-  "peerDependencies": {},
-  "dependencies": {
-    "@opennetwork/progressive-merge": "^4.0.3",
+  "peerDependencies": {
+    "@opennetwork/progressive-merge": "^4.0.4",
     "iterable": "^5.2.2",
     "microtask-collector": "^1.0.4"
+  },
+  "dependencies": {
   },
   "repository": {
     "type": "git",

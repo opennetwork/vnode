@@ -16,10 +16,10 @@
     esutils "^2.0.2"
     js-tokens "^4.0.0"
 
-"@opennetwork/progressive-merge@^4.0.3":
-  version "4.0.3"
-  resolved "https://registry.npmjs.org/@opennetwork/progressive-merge/-/progressive-merge-4.0.3.tgz#b95dfacdd2742613879abf01f1a524ceccb45e90"
-  integrity sha512-4iujXwXWQUjVB3CTvB14pE75QUGkPowkoDQ4BA1i483Vwd9Pezi7LHnp8LleotEXawDLkmsLuQOO1kE0MS473g==
+"@opennetwork/progressive-merge@^4.0.4":
+  version "4.0.4"
+  resolved "https://registry.npmjs.org/@opennetwork/progressive-merge/-/progressive-merge-4.0.4.tgz#c564f1367bfe34f92e37b3465f375a808d905535"
+  integrity sha512-OxqJur/+aNpDTDz+xFxuC+oJOiLWwE358tq1ZZNcHFvJs4pgAO410+dmpMNnhIv2JJUPqRHQyur435tlDqCvHQ==
 
 "@opennetwork/vnode-test@^1.0.3":
   version "1.0.3"
