@@ -1,6 +1,6 @@
 {
   "name": "@opennetwork/vnode",
-  "version": "17.2.0",
+  "version": "18.0.0",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -18,8 +18,7 @@
     "iterable": "^5.2.2",
     "microtask-collector": "^1.0.4"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "repository": {
     "type": "git",
     "url": "https://github.com/opennetwork/vnode.git"
