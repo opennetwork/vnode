@@ -76,6 +76,7 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
    */
   if (isPromise(source)) {
     return {
+      source,
       reference: Fragment,
       children: replay(() => promiseGenerator(source))
     };
@@ -86,7 +87,7 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
    * statement is invoked to handle fragments with children
    */
   if (source === Fragment) {
-    return createVNodeWithContext(context, { reference: Fragment }, options, ...children);
+    return createVNodeWithContext(context, { reference: Fragment, source }, options, ...children);
   }
 
   /**
@@ -139,6 +140,7 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
    */
   if (isIterableIterator(source)) {
     return {
+      source,
       reference: Fragment,
       children: generator(Symbol("Iterable Iterator"), source)
     };
@@ -152,6 +154,7 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
   if (isIterable(source) || isAsyncIterable(source)) {
     const childrenInstance = childrenGenerator(createVNodeWithContext, context, ...children);
     return {
+      source,
       reference: Fragment,
       children: replay(() => childrenGenerator(createVNodeWithContext, context, asyncExtendedIterable(source).map(value => createVNodeWithContext(context, value, options, childrenInstance))))
     };
@@ -161,7 +164,7 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
    * Allows for `undefined`, an empty `VNode`
    */
   if (!source) {
-    return { reference: Fragment };
+    return { reference: Fragment, source };
   }
 
   /**
@@ -207,6 +210,7 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
   function functionVNode(source: SourceReferenceRepresentationFactory<O>): VNode {
     return {
       reference: Fragment,
+      source,
       children: replay(() => functionAsChildren())
     };
 
@@ -234,7 +238,7 @@ export function createVNodeWithContext<O extends object>(context: VContext, sour
     return {
       reference: reference || getReference(context, options),
       scalar: true,
-      source: source,
+      source,
       options,
       children: replay(() => childrenGenerator(createVNodeWithContext, context, ...children))
     };
