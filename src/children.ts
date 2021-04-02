@@ -18,17 +18,7 @@ async function* childrenUnion(childrenGroups: MergeLaneInput<ReadonlyArray<VNode
   }
 }
 
-export async function *children(createVNode: (context: VContext, source: Source<never>) => VNode, context: VContext, ...source: VNodeRepresentationSource[]): AsyncIterable<ReadonlyArray<VNode>> {
-  if (context.children) {
-    const result = context.children(source);
-    if (result) {
-      for await (const update of result) {
-        yield Object.freeze(Array.isArray(update) ? update : update ? [...update] : []);
-      }
-      return;
-    }
-  }
-
+export async function *children(createVNode: (source: Source<never>) => VNode, ...source: VNodeRepresentationSource[]): AsyncIterable<ReadonlyArray<VNode>> {
   async function *eachSource(source: VNodeRepresentationSource): AsyncIterable<ReadonlyArray<VNode>> {
     if (typeof source === "undefined") {
       return;
@@ -50,7 +40,7 @@ export async function *children(createVNode: (context: VContext, source: Source<
 
     // These need further processing through createVNodeWithContext
     if (isSourceReference(source) || isMarshalledVNode(source) || isIterableIterator(source)) {
-      return yield* eachSource(createVNode(context, source));
+      return yield* eachSource(createVNode(source));
     }
 
     return yield* childrenUnion(

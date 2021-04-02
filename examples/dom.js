@@ -1,4 +1,4 @@
-import { WeakVContext, withContext, hydrate, hydrateChildren } from "../dist/index.js";
+import { WeakVContext, createVNode, hydrate, hydrateChildren } from "../dist/index.js";
 import { asyncExtendedIterable, source } from "iterable";
 import htm from "htm";
 
@@ -44,12 +44,12 @@ class DOMContext extends WeakVContext {
 }
 
 const currentContext = new DOMContext();
-const h = withContext(currentContext);
+const h = createVNode;
 const html = htm.bind(h);
 
 const promise = asyncExtendedIterable(currentContext.eventsTarget.hydrate)
   .forEach(hydrate => {
-    console.log({ hydrate });
+    console.log(hydrate);
   });
 
 const node = h(
@@ -151,13 +151,12 @@ const node = h(
   }
 );
 
-hydrate(currentContext, node)
-  .then(() => {
-    console.log("Completed hydrating");
-    return currentContext.close();
-  })
-  .then(() => promise)
-  .then(() => {
-    console.log("Completed listening");
-  })
-  .catch(error => console.error({ error }));
+try {
+  await hydrate(currentContext, node)
+  console.log("Completed hydrating");
+  await currentContext.close();
+  await promise;
+  console.log("Completed listening");
+} catch (error) {
+  console.error({ error });
+}
