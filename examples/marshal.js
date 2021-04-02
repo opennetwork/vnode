@@ -8,7 +8,6 @@ const context = {
 };
 
 const node = createVNode(
-  context,
   {
     reference: 1,
     source: "main",
