@@ -14,9 +14,9 @@
     "documentation": "typedoc --out ./documentation ./src --excludePrivate --theme minimal --mode file --excludeNotExported"
   },
   "peerDependencies": {
-    "@opennetwork/progressive-merge": "^4.0.4",
+    "@opennetwork/progressive-merge": "^5.1.1",
     "iterable": "^5.2.2",
-    "microtask-collector": "^1.0.4"
+    "microtask-collector": "^3.1.0"
   },
   "dependencies": {},
   "repository": {
@@ -24,11 +24,13 @@
     "url": "https://github.com/opennetwork/vnode.git"
   },
   "devDependencies": {
+    "@opennetwork/progressive-merge": "^5.1.1",
     "@opennetwork/vnode-test": "^1.0.3",
     "@types/node": "^12.7.4",
     "esm": "^3.2.25",
     "filehound": "^1.17.3",
     "htm": "^2.2.1",
+    "microtask-collector": "^3.1.0",
     "tslint": "^5.19.0",
     "typedoc": "^0.15.0",
     "typescript": "^4.2.3"

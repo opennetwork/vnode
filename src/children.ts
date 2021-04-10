@@ -1,4 +1,3 @@
-import { VContext } from "./vcontext";
 import { isFragmentVNode, isMarshalledVNode, isVNode, VNode, VNodeRepresentationSource } from "./vnode";
 import { isSourceReference } from "./source-reference";
 import {
@@ -7,9 +6,9 @@ import {
   isPromise
 } from "iterable";
 import { Source } from "./source";
-import { MergeLaneInput, merge } from "@opennetwork/progressive-merge";
+import { LaneInput, merge } from "@opennetwork/progressive-merge";
 
-async function* childrenUnion(childrenGroups: MergeLaneInput<ReadonlyArray<VNode>>): AsyncIterable<ReadonlyArray<VNode>> {
+async function* childrenUnion(childrenGroups: LaneInput<ReadonlyArray<VNode>>): AsyncIterable<ReadonlyArray<VNode>> {
   for await (const parts of merge(childrenGroups)) {
     yield parts.reduce(
       (updates: VNode[], part: (VNode | undefined)[]): VNode[] => updates.concat((part || []).filter(value => value)),

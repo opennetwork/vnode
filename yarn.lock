@@ -16,10 +16,15 @@
     esutils "^2.0.2"
     js-tokens "^4.0.0"
 
-"@opennetwork/progressive-merge@^4.0.4":
-  version "4.0.4"
-  resolved "https://registry.npmjs.org/@opennetwork/progressive-merge/-/progressive-merge-4.0.4.tgz#c564f1367bfe34f92e37b3465f375a808d905535"
-  integrity sha512-OxqJur/+aNpDTDz+xFxuC+oJOiLWwE358tq1ZZNcHFvJs4pgAO410+dmpMNnhIv2JJUPqRHQyur435tlDqCvHQ==
+"@opennetwork/linked-list@^4.0.0":
+  version "4.0.0"
+  resolved "https://registry.npmjs.org/@opennetwork/linked-list/-/linked-list-4.0.0.tgz#69e25d0b00387f00da91faea2a5b77897d920712"
+  integrity sha512-aMEXPA0y3FZd5IlPPNVLHf5jxwNE9bo6d+5OgCsqZhRilftUuaytEnAS+7ggjiPekAtVDFl2okYROqtL3f02+g==
+
+"@opennetwork/progressive-merge@^5.1.1":
+  version "5.1.1"
+  resolved "https://registry.npmjs.org/@opennetwork/progressive-merge/-/progressive-merge-5.1.1.tgz#c4cf4086a47883cc25fea5bd38d15c1a81ae550d"
+  integrity sha512-GyDyKaQoEszWFzIjEO7MFrU4TCv6fTiXrKl3w+Fr4TU90cQ/gtFhO+vBq9aaqC/KvU8Rw1F4hbUBgV07SZDwoA==
 
 "@opennetwork/vnode-test@^1.0.3":
   version "1.0.3"
@@ -253,10 +258,12 @@ marked@^0.7.0:
   version "0.7.0"
   resolved "https://registry.npmjs.org/marked/-/marked-0.7.0.tgz#b64201f051d271b1edc10a04d1ae9b74bb8e5c0e"
 
-microtask-collector@^1.0.4:
-  version "1.0.4"
-  resolved "https://registry.npmjs.org/microtask-collector/-/microtask-collector-1.0.4.tgz#c92751f5171d55477cae7b613435b735b326fdd3"
-  integrity sha512-j49//GFbQnRTZSrKgmgp5q1SAewmr9+ZQ4+Ta6jf7CS29Z8POqNrI99X3ztz1SZqFjr9kMzZQjy7+T1X33KgIA==
+microtask-collector@^3.1.0:
+  version "3.1.0"
+  resolved "https://registry.npmjs.org/microtask-collector/-/microtask-collector-3.1.0.tgz#a2ab49c1d5ea436ecaed027373b8a19a53b84f79"
+  integrity sha512-hqriS8rmSdcrnyxY8c1yA7Zb1PKLEQxxm1A5d53ZzxaMSpOWbW98zdKnjtJU6BCSANCu5C3rfcyxldXcTUQS9w==
+  dependencies:
+    "@opennetwork/linked-list" "^4.0.0"
 
 minimatch@^3.0.0, minimatch@^3.0.3, minimatch@^3.0.4:
   version "3.0.4"

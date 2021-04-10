@@ -18,15 +18,15 @@ export interface VContextChildrenEvent {
 }
 
 export interface VContextEvents {
-  createVNode?: AsyncIterable<ReadonlyArray<VContextCreateVNodeEvent>>;
-  children?: AsyncIterable<ReadonlyArray<VContextChildrenEvent>>;
-  hydrate?: AsyncIterable<ReadonlyArray<VContextHydrateEvent>>;
+  createVNode?: AsyncIterable<VContextCreateVNodeEvent[]>;
+  children?: AsyncIterable<VContextChildrenEvent[]>;
+  hydrate?: AsyncIterable<VContextHydrateEvent[]>;
 }
 
 export interface VContextEventsTarget extends VContextEvents {
-  createVNode?: Collector<VContextCreateVNodeEvent, ReadonlyArray<VContextCreateVNodeEvent>>;
-  children?: Collector<VContextChildrenEvent, ReadonlyArray<VContextChildrenEvent>>;
-  hydrate?: Collector<VContextHydrateEvent, ReadonlyArray<VContextHydrateEvent>>;
+  createVNode?: Collector<VContextCreateVNodeEvent>;
+  children?: Collector<VContextChildrenEvent>;
+  hydrate?: Collector<VContextHydrateEvent>;
 }
 
 export interface VContextEventsPair {
@@ -34,17 +34,16 @@ export interface VContextEventsPair {
   events: VContextEvents;
 }
 
-
 export function createVContextEvents(): VContextEventsPair {
   const target: VContextEventsTarget = {
-    createVNode: new Collector<VContextCreateVNodeEvent, ReadonlyArray<VContextCreateVNodeEvent>>({
-      map: Object.freeze
+    createVNode: new Collector<VContextCreateVNodeEvent>({
+      eagerCollection: true
     }),
-    children: new Collector<VContextChildrenEvent, ReadonlyArray<VContextChildrenEvent>>({
-      map: Object.freeze
+    children: new Collector<VContextChildrenEvent>({
+      eagerCollection: true
     }),
-    hydrate: new Collector<VContextHydrateEvent, ReadonlyArray<VContextHydrateEvent>>({
-      map: Object.freeze
+    hydrate: new Collector<VContextHydrateEvent>({
+      eagerCollection: true
     })
   };
   return {
