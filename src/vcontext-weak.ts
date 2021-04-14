@@ -4,34 +4,25 @@ import { Source } from "./source";
 import { VNode, VNodeRepresentationSource } from "./vnode";
 import { Tree } from "./tree";
 
-export class WeakVContext implements VContext {
+export class WeakVContext<
+  O extends object = object,
+  S = Source<O>,
+  C extends VNodeRepresentationSource = VNodeRepresentationSource,
+  TVNode extends VNode = VNode,
+  TTree extends Tree = Tree
+  > implements VContext<O, S, C, TVNode, TTree> {
 
   public readonly weak: WeakMap<object, unknown>;
-  public readonly events: VContextEvents;
-  protected readonly eventsTarget: VContextEventsTarget;
+  public readonly events: VContextEvents<O, S, C, TVNode, TTree>;
+  protected readonly eventsTarget: VContextEventsTarget<O, S, C, TVNode, TTree>;
 
-  constructor(weak?: WeakMap<object, unknown>, { events, target }: VContextEventsPair = createVContextEvents()) {
+  constructor(weak?: WeakMap<object, unknown>, { events, target }: VContextEventsPair<O, S, C, TVNode, TTree> = createVContextEvents()) {
     this.weak = weak || new WeakMap<object, unknown>();
     this.events = events;
     this.eventsTarget = target;
   }
 
-  createVNode<O extends object>(source: Source<O>, options: O): undefined {
-    this.eventsTarget.createVNode.add({
-      source,
-      options
-    });
-    return undefined;
-  }
-
-  children(children: VNodeRepresentationSource[]): undefined {
-    this.eventsTarget.children.add({
-      children
-    });
-    return undefined;
-  }
-
-  hydrate(node: VNode, tree?: Tree): Promise<void> {
+  hydrate(node: TVNode, tree?: TTree): Promise<void> {
     this.eventsTarget.hydrate.add({
       node,
       tree

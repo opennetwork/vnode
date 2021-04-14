@@ -1,6 +1,5 @@
 import { Source } from "./source";
-import { SourceReference } from "./source-reference";
-import { FragmentVNode, VNode, VNodeRepresentationSource } from "./vnode";
+import { VNode, VNodeRepresentationSource } from "./vnode";
 import { VContextEvents } from "./vcontext-events";
 import { Tree } from "./tree";
 
@@ -12,28 +11,30 @@ import { Tree } from "./tree";
  * Any {@link VContext} can hydrate {@link VNode} instances, irregardless of what {@link VContext} it was bound to during creation
  * this allows contexts to segregate based on the values provided by {@link VNode} directly
  */
-export interface VContext {
+export interface VContext<
+  O extends object = object,
+  S = Source<O>,
+  C extends VNodeRepresentationSource = VNodeRepresentationSource,
+  TVNode extends VNode = VNode,
+  TTree extends Tree = Tree
+  > {
 
-  events?: VContextEvents;
+  events?: VContextEvents<O, S, C, TVNode, TTree>;
 
   weak?: WeakMap<object, unknown>;
 
   /**
-   * This function is invoked during {@link createVNodeWithContext}, it allows a {@link VContext} to override this functionality
-   *
-   * If no value is returned then {@link createVNodeWithContext} will continue as normal
    * @param source
    * @param options
    */
-  createVNode?: <O extends object>(source: Source<O>, options: O) => undefined | FragmentVNode;
+  createVNode?: <TO extends O = O, TS extends S = S>(source: TS, options: TO) => TVNode;
+
   /**
-   * This function is invoked during {@link children}, it allows a {@link VContext} to override this functionality
-   *
-   * If no value is returned then {@link children} will continue as normal
    * @param source
    * @param options
    */
   children?: (children: VNodeRepresentationSource[]) => undefined | AsyncIterable<Iterable<VNode>>;
+
   /**
    * This function is invoked by {@link hydrate}
    *
@@ -42,14 +43,6 @@ export interface VContext {
    * @param tree
    */
   hydrate?: (node: VNode, tree?: Tree) => Promise<void>;
-
-  /**
-   * This function is invoked by {@link createVNode} when a reference is to be created for a
-   * {@link VNode}, it can be used to replace the reference that is being utilised
-   *
-   * Construction of a reference must be synchronous
-   */
-  reference?: (reference?: SourceReference) => SourceReference;
 
   /**
    * This function is invoked by a VContext consumer, it allows the VContext to perform any
