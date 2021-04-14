@@ -27,6 +27,31 @@ import {
 import { children as childrenGenerator } from "./children";
 import { Fragment } from "./fragment";
 
+export interface CreateVNodeFn<
+  O extends object = object,
+  S = Source<O>,
+  C extends VNodeRepresentationSource = VNodeRepresentationSource,
+  Output extends VNode = VNode
+  > {
+  <TO extends O = O>(source: S, options?: TO, ...children: C[]): Output;
+}
+export type CreateVNodeFnCatch<
+  O extends object = object,
+  S = Source<O>,
+  C extends VNodeRepresentationSource = VNodeRepresentationSource,
+  Output extends VNode = VNode,
+  Test extends CreateVNodeFn<O, S, C, Output> = CreateVNodeFn<O, S, C, Output>
+  > = Test;
+
+// This will throw if createVNode doesn't match the type for CreateVNodeFn, this gives us type safety :)
+type TestThrow = CreateVNodeFnCatch<
+  object,
+  Source<object>,
+  VNodeRepresentationSource,
+  VNode,
+  typeof createVNode
+>;
+
 /**
  * Generates instances of {@link FragmentVNode} based on the provided source
  *
@@ -41,7 +66,7 @@ import { Fragment } from "./fragment";
  * @param options
  * @param children
  */
-export function createVNode<O extends object>(source: Source<O>, options?: O, ...children: VNodeRepresentationSource[]): VNode {
+export function createVNode<O extends object = object>(source: Source<O>, options?: O, ...children: VNodeRepresentationSource[]): VNode {
   /**
    * If the source is a function we're going to invoke it as soon as possible with the provided options
    *
