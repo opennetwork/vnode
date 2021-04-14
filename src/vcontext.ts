@@ -24,18 +24,6 @@ export interface VContext<
   weak?: WeakMap<object, unknown>;
 
   /**
-   * @param source
-   * @param options
-   */
-  createVNode?: <TO extends O = O, TS extends S = S>(source: TS, options: TO) => TVNode;
-
-  /**
-   * @param source
-   * @param options
-   */
-  children?: (children: VNodeRepresentationSource[]) => undefined | AsyncIterable<Iterable<VNode>>;
-
-  /**
    * This function is invoked by {@link hydrate}
    *
    * The functionality provided by this function is up to the implementation
