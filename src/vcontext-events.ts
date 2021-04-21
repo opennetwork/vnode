@@ -18,55 +18,47 @@ export interface VContextChildrenEvent<C extends VNodeRepresentationSource = VNo
 }
 
 export interface VContextEvents<
-  O extends object = object,
-  S = Source<O>,
-  C extends VNodeRepresentationSource = VNodeRepresentationSource,
-  TVNode extends VNode = VNode,
-  TTree extends Tree = Tree
+  CreateEvent extends VContextCreateVNodeEvent = VContextCreateVNodeEvent,
+  ChildrenEvent extends VContextChildrenEvent = VContextChildrenEvent,
+  HydrateEvent extends VContextHydrateEvent = VContextHydrateEvent
   > {
-  createVNode?: AsyncIterable<VContextCreateVNodeEvent<O, S>[]>;
-  children?: AsyncIterable<VContextChildrenEvent<C>[]>;
-  hydrate?: AsyncIterable<VContextHydrateEvent<TVNode, TTree>[]>;
+  createVNode?: AsyncIterable<CreateEvent[]>;
+  children?: AsyncIterable<ChildrenEvent[]>;
+  hydrate?: AsyncIterable<HydrateEvent[]>;
 }
 
 export interface VContextEventsTarget<
-  O extends object = object,
-  S = Source<O>,
-  C extends VNodeRepresentationSource = VNodeRepresentationSource,
-  TVNode extends VNode = VNode,
-  TTree extends Tree = Tree
-  > extends VContextEvents<O, S, C, TVNode, TTree> {
-  createVNode?: Collector<VContextCreateVNodeEvent<O, S>>;
-  children?: Collector<VContextChildrenEvent<C>>;
-  hydrate?: Collector<VContextHydrateEvent<TVNode, TTree>>;
+  CreateEvent extends VContextCreateVNodeEvent = VContextCreateVNodeEvent,
+  ChildrenEvent extends VContextChildrenEvent = VContextChildrenEvent,
+  HydrateEvent extends VContextHydrateEvent = VContextHydrateEvent
+  > extends VContextEvents<CreateEvent, ChildrenEvent, HydrateEvent> {
+  createVNode?: Collector<CreateEvent>;
+  children?: Collector<ChildrenEvent>;
+  hydrate?: Collector<HydrateEvent>;
 }
 
 export interface VContextEventsPair<
-  O extends object = object,
-  S = Source<O>,
-  C extends VNodeRepresentationSource = VNodeRepresentationSource,
-  TVNode extends VNode = VNode,
-  TTree extends Tree = Tree
+  CreateEvent extends VContextCreateVNodeEvent = VContextCreateVNodeEvent,
+  ChildrenEvent extends VContextChildrenEvent = VContextChildrenEvent,
+  HydrateEvent extends VContextHydrateEvent = VContextHydrateEvent
   > {
-  target: VContextEventsTarget<O, S, C, TVNode, TTree>;
-  events: VContextEvents<O, S, C, TVNode, TTree>;
+  target: VContextEventsTarget<CreateEvent, ChildrenEvent, HydrateEvent>;
+  events: VContextEvents<CreateEvent, ChildrenEvent, HydrateEvent>;
 }
 
 export function createVContextEvents<
-  O extends object = object,
-  S = Source<O>,
-  C extends VNodeRepresentationSource = VNodeRepresentationSource,
-  TVNode extends VNode = VNode,
-  TTree extends Tree = Tree
-  >(): VContextEventsPair<O, S, C, TVNode, TTree> {
-  const target: VContextEventsTarget<O, S, C, TVNode, TTree> = {
-    createVNode: new Collector<VContextCreateVNodeEvent<O, S>>({
+  CreateEvent extends VContextCreateVNodeEvent = VContextCreateVNodeEvent,
+  ChildrenEvent extends VContextChildrenEvent = VContextChildrenEvent,
+  HydrateEvent extends VContextHydrateEvent = VContextHydrateEvent
+  >(): VContextEventsPair<CreateEvent, ChildrenEvent, HydrateEvent> {
+  const target: VContextEventsTarget<CreateEvent, ChildrenEvent, HydrateEvent> = {
+    createVNode: new Collector<CreateEvent>({
       eagerCollection: true
     }),
-    children: new Collector<VContextChildrenEvent<C>>({
+    children: new Collector<ChildrenEvent>({
       eagerCollection: true
     }),
-    hydrate: new Collector<VContextHydrateEvent<TVNode, TTree>>({
+    hydrate: new Collector<HydrateEvent>({
       eagerCollection: true
     })
   };

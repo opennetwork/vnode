@@ -1,6 +1,11 @@
 import { Source } from "./source";
 import { VNode, VNodeRepresentationSource } from "./vnode";
-import { VContextEvents } from "./vcontext-events";
+import {
+  VContextChildrenEvent,
+  VContextCreateVNodeEvent,
+  VContextEvents,
+  VContextHydrateEvent
+} from "./vcontext-events";
 import { Tree } from "./tree";
 
 /**
@@ -12,14 +17,12 @@ import { Tree } from "./tree";
  * this allows contexts to segregate based on the values provided by {@link VNode} directly
  */
 export interface VContext<
-  O extends object = object,
-  S = Source<O>,
-  C extends VNodeRepresentationSource = VNodeRepresentationSource,
-  TVNode extends VNode = VNode,
-  TTree extends Tree = Tree
+  CreateEvent extends VContextCreateVNodeEvent = VContextCreateVNodeEvent,
+  ChildrenEvent extends VContextChildrenEvent = VContextChildrenEvent,
+  HydrateEvent extends VContextHydrateEvent = VContextHydrateEvent
   > {
 
-  events?: VContextEvents<O, S, C, TVNode, TTree>;
+  events?: VContextEvents<CreateEvent, ChildrenEvent, HydrateEvent>;
 
   weak?: WeakMap<object, unknown>;
 

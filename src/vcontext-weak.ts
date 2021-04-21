@@ -1,33 +1,44 @@
 import { VContext } from "./vcontext";
-import { VContextEvents, VContextEventsTarget, createVContextEvents, VContextEventsPair } from "./vcontext-events";
-import { Source } from "./source";
-import { VNode, VNodeRepresentationSource } from "./vnode";
-import { Tree } from "./tree";
+import {
+  VContextEvents,
+  VContextEventsTarget,
+  createVContextEvents,
+  VContextEventsPair,
+  VContextCreateVNodeEvent, VContextChildrenEvent, VContextHydrateEvent
+} from "./vcontext-events";
 
 export class WeakVContext<
-  O extends object = object,
-  S = Source<O>,
-  C extends VNodeRepresentationSource = VNodeRepresentationSource,
-  TVNode extends VNode = VNode,
-  TTree extends Tree = Tree
-  > implements VContext<O, S, C, TVNode, TTree> {
+  CreateEvent extends VContextCreateVNodeEvent = VContextCreateVNodeEvent,
+  ChildrenEvent extends VContextChildrenEvent = VContextChildrenEvent,
+  HydrateEvent extends VContextHydrateEvent = VContextHydrateEvent
+  > implements VContext<CreateEvent, ChildrenEvent, HydrateEvent> {
 
   public readonly weak: WeakMap<object, unknown>;
-  public readonly events: VContextEvents<O, S, C, TVNode, TTree>;
-  protected readonly eventsTarget: VContextEventsTarget<O, S, C, TVNode, TTree>;
+  public readonly events: VContextEvents<CreateEvent, ChildrenEvent, HydrateEvent>;
+  protected readonly eventsTarget: VContextEventsTarget<CreateEvent, ChildrenEvent, HydrateEvent>;
 
-  constructor(weak?: WeakMap<object, unknown>, { events, target }: VContextEventsPair<O, S, C, TVNode, TTree> = createVContextEvents()) {
+  constructor(weak?: WeakMap<object, unknown>, { events, target }: VContextEventsPair<CreateEvent, ChildrenEvent, HydrateEvent> = createVContextEvents()) {
     this.weak = weak || new WeakMap<object, unknown>();
     this.events = events;
     this.eventsTarget = target;
   }
 
-  hydrate(node: TVNode, tree?: TTree): Promise<void> {
-    this.eventsTarget.hydrate.add({
+  hydrate(node: HydrateEvent["node"], tree?: HydrateEvent["tree"]): Promise<void> {
+    const event = {
       node,
       tree
-    });
+    };
+    assertHydrateEvent(event);
+    this.eventsTarget.hydrate.add(event);
     return Promise.resolve();
+    function assertHydrateEvent(event: unknown): asserts event is HydrateEvent {
+      function isHydrateEventLike(event: unknown): event is { node: unknown, tree: unknown } {
+        return !!event;
+      }
+      if (!(isHydrateEventLike(event) && event.node === node && event.tree === tree)) {
+        throw new Error("Expected HydrateEvent");
+      }
+    }
   }
 
   close(): Promise<void> {
