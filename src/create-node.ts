@@ -12,7 +12,8 @@ import {
   FragmentVNode,
   isFragmentVNode,
   isMarshalledVNode,
-  isVNode, MarshalledVNode,
+  isVNode,
+  MarshalledVNode,
   VNode,
   VNodeRepresentationSource
 } from "./vnode";
@@ -27,13 +28,35 @@ import {
 import { children as childrenGenerator } from "./children";
 import { Fragment } from "./fragment";
 
+export type CreateVNodeFragmentSource =
+  | AsyncIterable<unknown>
+  | Iterable<unknown>
+  | IterableIterator<unknown>
+  | Function
+  | Promise<unknown>
+  | FragmentVNode
+  | typeof Fragment
+  | undefined
+  | null;
+
 export interface CreateVNodeFn<
   O extends object = object,
   S = Source<O>,
   C extends VNodeRepresentationSource = VNodeRepresentationSource,
   Output extends VNode = VNode
   > {
-  <TO extends O = O>(source: S, options?: TO, ...children: C[]): Output;
+  <Input extends FragmentVNode>(source: Input, ...throwAway: unknown[]): Input;
+  <Input extends VNode>(source: Input, ...throwAway: unknown[]): Input;
+  <TO extends O, S extends CreateVNodeFragmentSource>(source: S, options?: TO, ...children: C[]): FragmentVNode & {
+    source: S;
+    options: TO;
+  };
+  <TO extends O, S extends SourceReference>(source: S, options?: TO, ...children: C[]): VNode & {
+    source: S;
+    options: TO;
+    scalar: true;
+  };
+  <TO extends O>(source: S, options?: TO, ...children: C[]): Output;
 }
 export type CreateVNodeFnCatch<
   O extends object = object,
@@ -61,11 +84,19 @@ type TestThrow = CreateVNodeFnCatch<
  *
  * The special case to point out here is if the source is an `IterableIterator` (see {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#Is_a_generator_object_an_iterator_or_an_iterable})
  * then each iteration will result in a new {@link VNode} being created
- *
- * @param source
- * @param options
- * @param children
  */
+export function createVNode<Input extends FragmentVNode>(source: Input, ...throwAway: unknown[]): Input;
+export function createVNode<Input extends VNode = VNode>(source: Input, ...throwAway: unknown[]): Input;
+export function createVNode<O extends object = object, S extends CreateVNodeFragmentSource = CreateVNodeFragmentSource>(source: S, options?: O, ...children: VNodeRepresentationSource[]): FragmentVNode & {
+  source: S;
+  options: O;
+};
+export function createVNode<O extends object = object, S extends string = string>(source: S, options?: O, ...children: VNodeRepresentationSource[]): VNode & {
+  source: S;
+  options: O;
+  scalar: true;
+};
+export function createVNode<O extends object = object>(source: Source<O>, options?: O, ...children: VNodeRepresentationSource[]): VNode;
 export function createVNode<O extends object = object>(source: Source<O>, options?: O, ...children: VNodeRepresentationSource[]): VNode {
   /**
    * If the source is a function we're going to invoke it as soon as possible with the provided options
@@ -105,6 +136,7 @@ export function createVNode<O extends object = object>(source: Source<O>, option
     // If a fragment has no children then we will attach our children to it
     return {
       ...source,
+      options,
       children: replay(() => childrenGenerator(createVNode, ...children))
     };
   }
@@ -217,15 +249,17 @@ export function createVNode<O extends object = object>(source: Source<O>, option
 
   function functionVNode(source: SourceReferenceRepresentationFactory<O>): VNode {
     const defaultOptions = {};
+    const resolvedOptions = isDefaultOptionsO(defaultOptions) ? defaultOptions : options;
 
     return {
       reference: Fragment,
       source,
+      options: resolvedOptions,
       children: replay(() => functionAsChildren())
     };
 
     async function *functionAsChildren(): AsyncIterable<ReadonlyArray<VNode>> {
-      const nextSource = source(isDefaultOptionsO(defaultOptions) ? defaultOptions : options, createVNode(Fragment, {}, ...children));
+      const nextSource = source(resolvedOptions, createVNode(Fragment, {}, ...children));
       yield Object.freeze([
         createVNode(nextSource, options, undefined)
       ]);
