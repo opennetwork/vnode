@@ -58,6 +58,16 @@ export interface CreateVNodeFn<
   };
   <TO extends O>(source: S, options?: TO, ...children: C[]): Output;
 }
+
+
+export type CreateVNodeFnUndefinedOptionsCatch<
+  T extends (source: CreateVNodeFragmentSource) => FragmentVNode & { source: CreateVNodeFragmentSource, options: never }> = T;
+export type CreateVNodeFnGivenOptionsCatch<
+  T extends (source: CreateVNodeFragmentSource, options: { key: "value" }) => FragmentVNode & { source: CreateVNodeFragmentSource, options: { key: "value" } }> = T;
+
+type ThrowAwayCreateVNodeFnUndefinedOptionsCatch = CreateVNodeFnUndefinedOptionsCatch<CreateVNodeFn>;
+type ThrowAwayCreateVNodeFnGivenOptionsCatch = CreateVNodeFnGivenOptionsCatch<CreateVNodeFn>;
+
 export type CreateVNodeFnCatch<
   O extends object = object,
   S = Source<O>,
