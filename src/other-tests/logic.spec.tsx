@@ -3,31 +3,35 @@ import { isVNode, VNode } from "../vnode";
 import { isSourceReference, SourceReference } from "../source-reference";
 import { filtered } from "../filter";
 
-interface MapMatchProps<M extends VNode = VNode> {
+interface IsProps<M extends VNode = VNode> {
     map?(input: VNode): VNode & { children: AsyncIterable<M[]>};
-    match?(node: M): unknown;
+    match(node: M[]): boolean;
 }
 
-async function *Every({ map, match }: MapMatchProps, input: VNode) {
+async function *Is({ map, match }: IsProps, input: VNode) {
     let yielded = false;
     for await (const children of (map ?? sources)(input).children) {
-        yield children.every(match ?? isValue);
+        yield match(children);
         yielded = true;
     }
     if (!yielded) return false;
+}
+
+interface MapMatchProps<M extends VNode = VNode> {
+    map?(input: VNode): VNode & { children: AsyncIterable<M[]>};
+    match?(node: M): boolean;
+}
+
+function Every<M extends VNode = VNode>({ map, match }: MapMatchProps<M>, input: VNode) {
+    return <Is map={map} match={nodes => nodes.every(match ?? isValue)}>{input}</Is>;
 
     function isValue(vnode: VNode): unknown {
         return vnode.source;
     }
 }
 
-async function *Some({ map, match }: MapMatchProps, input: VNode) {
-    let yielded = false;
-    for await (const children of (map ?? sources)(input).children) {
-        yield children.some(match ?? isValue);
-        yielded = true;
-    }
-    if (!yielded) return false;
+function Some<M extends VNode = VNode>({ map, match }: MapMatchProps<M>, input: VNode) {
+    return <Is map={map} match={nodes => nodes.some(match ?? isValue)}>{input}</Is>;
 
     function isValue(vnode: VNode): unknown {
         return vnode.source;
@@ -110,19 +114,14 @@ async function eventually(node: VNode, match: unknown, flush: boolean = false) {
         const { source } = result;
         value = source;
         if (!flush && value === match) {
-            console.trace({ value, match, flush });
             return true;
         }
         yielded = true;
     }
-
     if (!yielded) {
         // If no yield and match is undefined we still want to return false
         return false;
     }
-
-    console.trace({ value, match });
-
     return value === match;
 }
 
