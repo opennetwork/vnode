@@ -65,41 +65,6 @@ describe("Basic", function () {
     expect(results.length).toEqual(0);
   });
 
-  it("does logic?", async () => {
-
-    async function *Every(props: unknown, input: VNode) {
-      let yielded = false;
-      for await (const children of sources(input).children) {
-        yield children.every(({ source }) => source);
-        yielded = true;
-      }
-      if (!yielded) return false;
-    }
-
-    function Thing() {
-      return (
-          <Every>
-            {1}
-            {2}
-          </Every>
-      );
-    }
-
-    const results: boolean[] = [];
-    for await (const [result] of sources(<Thing />).children) {
-      expect(isVNode(result)).toBeTruthy();
-      const { source } = result;
-      assertBoolean(source);
-      results.push(source);
-    }
-
-    expect(results[results.length - 1]).toEqual(true);
-
-  });
-
-  function assertBoolean(source: unknown): asserts source is boolean {
-    expect(typeof source).toEqual("boolean");
-  }
 });
 
 type SourceVNode = VNode & { source: SourceReference };
