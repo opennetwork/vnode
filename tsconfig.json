@@ -1,12 +1,13 @@
 {
     "compilerOptions": {
-        "module": "es6",
+        "module": "esnext",
         "lib": [
             "es2018",
-            "esnext"
+            "esnext",
+            "dom"
         ],
         "types": [
-            "node"
+          "jest"
         ],
         "esModuleInterop": true,
         "target": "esnext",
@@ -21,7 +22,11 @@
                 "node_modules/*",
                 "src/types/*"
             ]
-        }
+        },
+        "jsx": "react",
+        "jsxFactory": "h",
+        "jsxFragmentFactory": "createFragment",
+        "allowJs": true
     },
     "include": [
         "src/**/*"
