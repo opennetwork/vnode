@@ -8,6 +8,7 @@ import { isSourceReference, SourceReference } from "../source-reference";
 import { Input } from "@opennetwork/progressive-merge/dist/async";
 import { LaneInput, merge } from "@opennetwork/progressive-merge";
 import { createFragment, Fragment } from "../fragment";
+import { filtered } from "../filter";
 
 class HydratingVContext extends WeakVContext {
   hydrate(node: VContextHydrateEvent["node"], tree?: VContextHydrateEvent["tree"]): Promise<void> {
@@ -64,53 +65,48 @@ describe("Basic", function () {
     expect(results.length).toEqual(0);
   });
 
+  it("does logic?", async () => {
+
+    async function *Every(props: unknown, input: VNode) {
+      let yielded = false;
+      for await (const children of sources(input).children) {
+        yield children.every(({ source }) => source);
+        yielded = true;
+      }
+      if (!yielded) return false;
+    }
+
+    function Thing() {
+      return (
+          <Every>
+            {1}
+            {2}
+          </Every>
+      );
+    }
+
+    const results: boolean[] = [];
+    for await (const [result] of sources(<Thing />).children) {
+      expect(isVNode(result)).toBeTruthy();
+      const { source } = result;
+      assertBoolean(source);
+      results.push(source);
+    }
+
+    expect(results[results.length - 1]).toEqual(true);
+
+  });
+
+  function assertBoolean(source: unknown): asserts source is boolean {
+    expect(typeof source).toEqual("boolean");
+  }
 });
 
 type SourceVNode = VNode & { source: SourceReference };
 function sources(node: VNode): VNode & { children: AsyncIterable<SourceVNode[]> } {
-  return {
-    ...node,
-    children: children(node)
-  };
+  return filtered(node, isSourceVNode);
 
-  function children(node: VNode): AsyncIterable<SourceVNode[]> {
-    return {
-      async *[Symbol.asyncIterator]() {
-        yield *childrenGenerator();
-      }
-    };
-    async function *childrenGenerator(): AsyncIterable<SourceVNode[]> {
-      if (!node.children) return;
-      for await (const children of node.children) {
-        if (!children.length) {
-          continue;
-        }
-        if (children.every(isSourceVNode)) {
-          yield [...children];
-          continue;
-        }
-        // We have a bunch of iterables, async or not, that will provide an array of
-        // ElementDOMNativeVNode for each iteration
-        const lanes: LaneInput<SourceVNode[]> = children
-            .map(sourcesChildren);
-        const merged: AsyncIterable<ReadonlyArray<SourceVNode[] | undefined>> = merge(lanes);
-        for await (const parts of merged) {
-          yield parts.reduce<SourceVNode[]>(
-              (updates , part) => updates.concat(part ?? []),
-              []
-          );
-        }
-      }
-    }
-
-    function sourcesChildren(node: VNode): Input<SourceVNode[]> {
-      return isSourceVNode(node) ? [[node]] : sources(node).children;
-    }
-
-    function isSourceVNode(node: VNode): node is SourceVNode {
-      return isSourceReference(node.source) && node.source !== node.reference;
-    }
+  function isSourceVNode(node: VNode): node is SourceVNode {
+    return isSourceReference(node.source) && node.source !== node.reference;
   }
-
-
 }

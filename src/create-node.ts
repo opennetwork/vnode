@@ -216,6 +216,8 @@ export function createVNode<O extends object = object>(source: Source<O>, option
   }
 
   function functionVNode(source: SourceReferenceRepresentationFactory<O>): VNode {
+    const defaultOptions = {};
+
     return {
       reference: Fragment,
       source,
@@ -223,10 +225,14 @@ export function createVNode<O extends object = object>(source: Source<O>, option
     };
 
     async function *functionAsChildren(): AsyncIterable<ReadonlyArray<VNode>> {
-      const nextSource = source(options, createVNode(Fragment, {}, ...children));
+      const nextSource = source(isDefaultOptionsO(defaultOptions) ? defaultOptions : options, createVNode(Fragment, {}, ...children));
       yield Object.freeze([
         createVNode(nextSource, options, undefined)
       ]);
+    }
+
+    function isDefaultOptionsO(value: unknown): value is O {
+      return value === defaultOptions && !options;
     }
   }
 
