@@ -114,7 +114,7 @@ export type BasicVNodeRepresentation = VNodeRepresentation | AsyncIterableLike<V
 export type VNodeRepresentationSource = BasicVNodeRepresentation | AsyncIterableLike<BasicVNodeRepresentation>;
 
 function isVNodeLike(value: unknown): value is Partial<VNode> {
-  return typeof value === "object";
+  return typeof value === "object" || typeof value === "function";
 }
 
 /**

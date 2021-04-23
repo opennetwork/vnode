@@ -47,26 +47,53 @@ export interface CreateVNodeFn<
   > {
   <Input extends FragmentVNode>(source: Input, ...throwAway: unknown[]): Input;
   <Input extends VNode>(source: Input, ...throwAway: unknown[]): Input;
+  <TO extends O, S extends CreateVNodeFragmentSource>(source: S): FragmentVNode & {
+    source: S;
+    options: never;
+    children: never;
+  };
+  <S extends CreateVNodeFragmentSource>(source: S): FragmentVNode & {
+    source: S;
+    options: never;
+    children: never;
+  };
+  <TO extends O, S extends CreateVNodeFragmentSource>(source: S, options: TO): FragmentVNode & {
+    source: S;
+    options: TO;
+    children: never;
+  };
   <TO extends O, S extends CreateVNodeFragmentSource>(source: S, options?: TO, ...children: C[]): FragmentVNode & {
     source: S;
     options: TO;
   };
-  <TO extends O, S extends SourceReference>(source: S, options?: TO, ...children: C[]): VNode & {
+  <TO extends O, S extends SourceReference>(source: S): VNode & {
+    source: S;
+    options: never;
+    scalar: true;
+    children: never;
+  };
+  <TO extends O, S extends SourceReference>(source: S, options?: TO): VNode & {
     source: S;
     options: TO;
     scalar: true;
+    children: never;
+  };
+  <TO extends O, S extends SourceReference>(source: S, options?: TO, ...children: C[]): VNode & {
+    source: S;
+    options: TO;
+    scalar: false;
   };
   <TO extends O>(source: S, options?: TO, ...children: C[]): Output;
 }
 
 
 export type CreateVNodeFnUndefinedOptionsCatch<
-  T extends (source: CreateVNodeFragmentSource) => FragmentVNode & { source: CreateVNodeFragmentSource, options: never }> = T;
+  Test extends (source: CreateVNodeFragmentSource) => FragmentVNode & { source: CreateVNodeFragmentSource, options: never }> = Test;
 export type CreateVNodeFnGivenOptionsCatch<
-  T extends (source: CreateVNodeFragmentSource, options: { key: "value" }) => FragmentVNode & { source: CreateVNodeFragmentSource, options: { key: "value" } }> = T;
+  Test extends (source: CreateVNodeFragmentSource, options: { key: "value" }) => FragmentVNode & { source: CreateVNodeFragmentSource, options: { key: "value" } }> = Test;
 
-type ThrowAwayCreateVNodeFnUndefinedOptionsCatch = CreateVNodeFnUndefinedOptionsCatch<CreateVNodeFn>;
-type ThrowAwayCreateVNodeFnGivenOptionsCatch = CreateVNodeFnGivenOptionsCatch<CreateVNodeFn>;
+type ThrowAwayCreateVNodeFnUndefinedOptionsCatch = CreateVNodeFnUndefinedOptionsCatch<typeof createVNode>;
+type ThrowAwayCreateVNodeFnGivenOptionsCatch = CreateVNodeFnGivenOptionsCatch<typeof createVNode>;
 
 export type CreateVNodeFnCatch<
   O extends object = object,
@@ -101,10 +128,20 @@ export function createVNode<O extends object = object, S extends CreateVNodeFrag
   source: S;
   options: O;
 };
-export function createVNode<O extends object = object, S extends string = string>(source: S, options?: O, ...children: VNodeRepresentationSource[]): VNode & {
+export function createVNode<O extends object = object, S extends CreateVNodeFragmentSource = CreateVNodeFragmentSource>(source: S, options?: O, ...children: VNodeRepresentationSource[]): FragmentVNode & {
   source: S;
   options: O;
-  scalar: true;
+};
+export function createVNode<O extends object = object, S extends SourceReference = SourceReference>(source: S, options?: O): VNode & {
+  source: S;
+  options: O;
+  scalar: boolean;
+  children: never;
+};
+export function createVNode<O extends object = object, S extends SourceReference = SourceReference>(source: S, options?: O, ...children: VNodeRepresentationSource[]): VNode & {
+  source: S;
+  options: O;
+  scalar: boolean;
 };
 export function createVNode<O extends object = object>(source: Source<O>, options?: O, ...children: VNodeRepresentationSource[]): VNode;
 export function createVNode<O extends object = object>(source: Source<O>, options?: O, ...children: VNodeRepresentationSource[]): VNode {
@@ -138,24 +175,34 @@ export function createVNode<O extends object = object>(source: Source<O>, option
   if (source === Fragment) {
     return createVNode({ reference: Fragment, source }, options, ...children);
   }
-
-  /**
-   * This allows fragments to be extended with children
-   */
-  if (isFragmentVNode(source) && !source.children) {
-    // If a fragment has no children then we will attach our children to it
-    return {
-      ...source,
-      options,
-      children: replay(() => childrenGenerator(createVNode, ...children))
-    };
-  }
-
   /**
    * If we already have a {@link VNode} then we don't and can't do any more
    */
   if (isVNode(source)) {
-    return source;
+    let nextSource: VNode = source;
+    /**
+     * Extend our vnode options if we have been provided them
+     * Each property that is not passed will match the initial property
+     */
+    if (options && source.options !== options) {
+      nextSource = {
+        ...nextSource,
+        options: {
+          ...nextSource.options,
+          ...options
+        }
+      };
+    }
+    /**
+     * Replace children if they have been given and the source doesn't already have children
+     */
+    if (children.length && !nextSource.children) {
+      nextSource = {
+        ...nextSource,
+        children: replay(() => childrenGenerator(createVNode, ...children))
+      };
+    }
+    return nextSource;
   }
 
   /**
@@ -258,18 +305,25 @@ export function createVNode<O extends object = object>(source: Source<O>, option
   }
 
   function functionVNode(source: SourceReferenceRepresentationFactory<O>): VNode {
+    if (isVNode(source)) {
+      // If we have a function that is also a vnode, it is thought to be self referencing, this is most likely a
+      // tokenized component
+      return source;
+    }
     const defaultOptions = {};
     const resolvedOptions = isDefaultOptionsO(defaultOptions) ? defaultOptions : options;
 
-    return {
+    const node = {
       reference: Fragment,
       source,
       options: resolvedOptions,
       children: replay(() => functionAsChildren())
     };
+    return node;
 
     async function *functionAsChildren(): AsyncIterable<ReadonlyArray<VNode>> {
-      const nextSource = source(resolvedOptions, createVNode(Fragment, {}, ...children));
+      // Referencing node here allows for external to update the nodes implementation on the fly...
+      const nextSource = node.source(node.options, createVNode(Fragment, {}, ...children));
       yield Object.freeze([
         createVNode(nextSource, options, undefined)
       ]);
@@ -295,7 +349,7 @@ export function createVNode<O extends object = object>(source: Source<O>, option
   function sourceReferenceVNode(reference: SourceReference, source: SourceReference, options?: object, ...children: VNodeRepresentationSource[]): VNode {
     return {
       reference: reference || getReference(options),
-      scalar: true,
+      scalar: !!children.length,
       source,
       options,
       children: replay(() => childrenGenerator(createVNode, ...children))
