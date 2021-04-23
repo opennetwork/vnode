@@ -44,7 +44,7 @@ export class WeakVContext<
   close(): Promise<void> {
     this.eventsTarget.children.close();
     this.eventsTarget.hydrate.close();
-    this.eventsTarget.createVNode.close();
+    this.eventsTarget.createNode.close();
     return Promise.resolve();
   }
 

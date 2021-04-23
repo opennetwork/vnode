@@ -28,7 +28,7 @@ import {
 import { children as childrenGenerator } from "./children";
 import { Fragment } from "./fragment";
 
-export type CreateVNodeFragmentSource =
+export type CreateNodeFragmentSource =
   | AsyncIterable<unknown>
   | Iterable<unknown>
   | IterableIterator<unknown>
@@ -47,22 +47,22 @@ export interface CreateNodeFn<
   > {
   <Input extends FragmentVNode>(source: Input, ...throwAway: unknown[]): Input;
   <Input extends VNode>(source: Input, ...throwAway: unknown[]): Input;
-  <TO extends O, S extends CreateVNodeFragmentSource>(source: S): FragmentVNode & {
+  <TO extends O, S extends CreateNodeFragmentSource>(source: S): FragmentVNode & {
     source: S;
     options: never;
     children: never;
   };
-  <S extends CreateVNodeFragmentSource>(source: S): FragmentVNode & {
+  <S extends CreateNodeFragmentSource>(source: S): FragmentVNode & {
     source: S;
     options: never;
     children: never;
   };
-  <TO extends O, S extends CreateVNodeFragmentSource>(source: S, options: TO): FragmentVNode & {
+  <TO extends O, S extends CreateNodeFragmentSource>(source: S, options: TO): FragmentVNode & {
     source: S;
     options: TO;
     children: never;
   };
-  <TO extends O, S extends CreateVNodeFragmentSource>(source: S, options?: TO, ...children: C[]): FragmentVNode & {
+  <TO extends O, S extends CreateNodeFragmentSource>(source: S, options?: TO, ...children: C[]): FragmentVNode & {
     source: S;
     options: TO;
   };
@@ -87,15 +87,15 @@ export interface CreateNodeFn<
 }
 
 
-export type CreateVNodeFnUndefinedOptionsCatch<
-  Test extends (source: CreateVNodeFragmentSource) => FragmentVNode & { source: CreateVNodeFragmentSource, options: never }> = Test;
-export type CreateVNodeFnGivenOptionsCatch<
-  Test extends (source: CreateVNodeFragmentSource, options: { key: "value" }) => FragmentVNode & { source: CreateVNodeFragmentSource, options: { key: "value" } }> = Test;
+export type CreateNodeFnUndefinedOptionsCatch<
+  Test extends (source: CreateNodeFragmentSource) => FragmentVNode & { source: CreateNodeFragmentSource, options: never }> = Test;
+export type CreateNodeFnGivenOptionsCatch<
+  Test extends (source: CreateNodeFragmentSource, options: { key: "value" }) => FragmentVNode & { source: CreateNodeFragmentSource, options: { key: "value" } }> = Test;
 
-type ThrowAwayCreateVNodeFnUndefinedOptionsCatch = CreateVNodeFnUndefinedOptionsCatch<typeof createNode>;
-type ThrowAwayCreateVNodeFnGivenOptionsCatch = CreateVNodeFnGivenOptionsCatch<typeof createNode>;
+type ThrowAwayCreateNodeFnUndefinedOptionsCatch = CreateNodeFnUndefinedOptionsCatch<typeof createNode>;
+type ThrowAwayCreateNodeFnGivenOptionsCatch = CreateNodeFnGivenOptionsCatch<typeof createNode>;
 
-export type CreateVNodeFnCatch<
+export type CreateNodeFnCatch<
   O extends object = object,
   S = Source<O>,
   C extends VNodeRepresentationSource = VNodeRepresentationSource,
@@ -104,7 +104,7 @@ export type CreateVNodeFnCatch<
   > = Test;
 
 // This will throw if createNode doesn't match the type for CreateNodeFn, this gives us type safety :)
-type TestThrow = CreateVNodeFnCatch<
+type TestThrow = CreateNodeFnCatch<
   object,
   Source<object>,
   VNodeRepresentationSource,
@@ -124,11 +124,11 @@ type TestThrow = CreateVNodeFnCatch<
  */
 export function createNode<Input extends FragmentVNode>(source: Input, ...throwAway: unknown[]): Input;
 export function createNode<Input extends VNode = VNode>(source: Input, ...throwAway: unknown[]): Input;
-export function createNode<O extends object = object, S extends CreateVNodeFragmentSource = CreateVNodeFragmentSource>(source: S, options?: O, ...children: VNodeRepresentationSource[]): FragmentVNode & {
+export function createNode<O extends object = object, S extends CreateNodeFragmentSource = CreateNodeFragmentSource>(source: S, options?: O, ...children: VNodeRepresentationSource[]): FragmentVNode & {
   source: S;
   options: O;
 };
-export function createNode<O extends object = object, S extends CreateVNodeFragmentSource = CreateVNodeFragmentSource>(source: S, options?: O, ...children: VNodeRepresentationSource[]): FragmentVNode & {
+export function createNode<O extends object = object, S extends CreateNodeFragmentSource = CreateNodeFragmentSource>(source: S, options?: O, ...children: VNodeRepresentationSource[]): FragmentVNode & {
   source: S;
   options: O;
 };

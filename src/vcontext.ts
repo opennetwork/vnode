@@ -1,5 +1,4 @@
-import { Source } from "./source";
-import { VNode, VNodeRepresentationSource } from "./vnode";
+import { VNode } from "./vnode";
 import {
   VContextChildrenEvent,
   VContextCreateVNodeEvent,

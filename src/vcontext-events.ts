@@ -22,7 +22,7 @@ export interface VContextEvents<
   ChildrenEvent extends VContextChildrenEvent = VContextChildrenEvent,
   HydrateEvent extends VContextHydrateEvent = VContextHydrateEvent
   > {
-  createVNode?: AsyncIterable<CreateEvent[]>;
+  createNode?: AsyncIterable<CreateEvent[]>;
   children?: AsyncIterable<ChildrenEvent[]>;
   hydrate?: AsyncIterable<HydrateEvent[]>;
 }
@@ -32,7 +32,7 @@ export interface VContextEventsTarget<
   ChildrenEvent extends VContextChildrenEvent = VContextChildrenEvent,
   HydrateEvent extends VContextHydrateEvent = VContextHydrateEvent
   > extends VContextEvents<CreateEvent, ChildrenEvent, HydrateEvent> {
-  createVNode?: Collector<CreateEvent>;
+  createNode?: Collector<CreateEvent>;
   children?: Collector<ChildrenEvent>;
   hydrate?: Collector<HydrateEvent>;
 }
@@ -52,7 +52,7 @@ export function createVContextEvents<
   HydrateEvent extends VContextHydrateEvent = VContextHydrateEvent
   >(): VContextEventsPair<CreateEvent, ChildrenEvent, HydrateEvent> {
   const target: VContextEventsTarget<CreateEvent, ChildrenEvent, HydrateEvent> = {
-    createVNode: new Collector<CreateEvent>({
+    createNode: new Collector<CreateEvent>({
       eagerCollection: true
     }),
     children: new Collector<ChildrenEvent>({

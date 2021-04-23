@@ -17,7 +17,7 @@ async function* childrenUnion(childrenGroups: LaneInput<ReadonlyArray<VNode>>): 
   }
 }
 
-export async function *children(createVNode: (source: Source<never>) => VNode, ...source: VNodeRepresentationSource[]): AsyncIterable<ReadonlyArray<VNode>> {
+export async function *children(createNode: (source: Source<never>) => VNode, ...source: VNodeRepresentationSource[]): AsyncIterable<ReadonlyArray<VNode>> {
   async function *eachSource(source: VNodeRepresentationSource): AsyncIterable<ReadonlyArray<VNode>> {
     if (typeof source === "undefined") {
       return;
@@ -39,7 +39,7 @@ export async function *children(createVNode: (source: Source<never>) => VNode, .
 
     // These need further processing through createVNodeWithContext
     if (isSourceReference(source) || isMarshalledVNode(source) || isIterableIterator(source)) {
-      return yield* eachSource(createVNode(source));
+      return yield* eachSource(createNode(source));
     }
 
     return yield* childrenUnion(

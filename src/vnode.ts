@@ -23,9 +23,8 @@ export interface VNode {
    * A {@link VContext} may choose to utilise an external value to represent the source
    */
   source?: unknown;
-
   /**
-   * The options provided to the {@link VNode} from the {@link createVNodeWithContext} function
+   * The options provided to the {@link VNode} from the {@link createNode} function
    */
   options?: object;
   /**
@@ -36,10 +35,6 @@ export interface VNode {
    * See {@link NativeVNode}
    */
   native?: boolean;
-  /**
-   * See {@link HydratedVNode}
-   */
-  hydrated?: boolean;
 }
 
 /**
@@ -73,13 +68,6 @@ export interface ScalarVNode extends VNode {
  */
 export interface NativeVNode extends VNode {
   native: true;
-}
-
-/**
- * A template for {@link VContext} to represent a {@link VNode} that is already hydrated and requires no more hydration
- */
-export interface HydratedVNode extends VNode {
-  hydrated: true;
 }
 
 /**
@@ -133,20 +121,6 @@ export function isVNode(value: unknown): value is VNode {
       !value.options ||
       typeof value.options === "object"
     )
-  );
-}
-
-/**
- * Indicates if a value is a {@link HydratedVNode}
- * @param value
- */
-export function isHydratedVNode(value: unknown): value is HydratedVNode {
-  function isHydratedVNodeLike(value: unknown): value is VNode & { hydrated?: unknown } {
-    return isVNode(value);
-  }
-  return (
-    isHydratedVNodeLike(value) &&
-    value.hydrated === true
   );
 }
 
