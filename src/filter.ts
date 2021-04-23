@@ -19,7 +19,7 @@ export function filtered<Node extends VNode = VNode>(node: VNode, isNode: (node:
         if (!children.length) {
           continue;
         }
-        if (children.every(isNode)) {
+        if (children.every((node): node is Node => isNode(node))) {
           yield [...children];
           continue;
         }
