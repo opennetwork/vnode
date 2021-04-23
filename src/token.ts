@@ -21,7 +21,7 @@ export function createToken<T extends SourceReference>(input: T): TokenVNode<T> 
     source: input
   });
   const almost: unknown = token;
-  assertToken(almost, (value: unknown): value is T => value === input);
+  assertTokenVNode(almost, (value: unknown): value is T => value === input);
   tokenized = almost;
   return almost;
 }
@@ -30,7 +30,7 @@ export function isTokenVNode<T extends SourceReference = SourceReference>(value:
   return typeof value === "function" && isVNode(value) && (isTokenSource ?? isSourceReference)(value.source) && value.reference === Token;
 }
 
-export function assertToken<T extends SourceReference = SourceReference>(value: unknown, isTokenSource?: (value: unknown) => value is T): asserts value is TokenVNode<T> {
+export function assertTokenVNode<T extends SourceReference = SourceReference>(value: unknown, isTokenSource?: (value: unknown) => value is T): asserts value is TokenVNode<T> {
   if (!isTokenVNode(value, isTokenSource)) {
     throw new Error("Expected TokenVNode");
   }
