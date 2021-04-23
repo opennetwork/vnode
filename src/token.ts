@@ -11,19 +11,19 @@ export interface TokenVNode<T extends SourceReference> extends VNode {
 }
 
 export function createToken<T extends SourceReference>(input: T): TokenVNode<T> {
-  // Type yoga
-  let tokenized: TokenVNode<T>;
   function token(): TokenVNode<T> {
-    return tokenized;
+    // Prevent the function from ever being called
+    // We want all the types to line up correct but don't
+    // want vnode to run this
+    throw new Error("Not implemented");
   }
   Object.assign(token, {
     reference: Token,
     source: input
   });
-  const almost: unknown = token;
-  assertTokenVNode(almost, (value: unknown): value is T => value === input);
-  tokenized = almost;
-  return almost;
+  const tokenized: unknown = token;
+  assertTokenVNode(tokenized, (value: unknown): value is T => value === input);
+  return tokenized;
 }
 
 export function isTokenVNode<T extends SourceReference = SourceReference>(value: unknown, isTokenSource?: (value: unknown) => value is T): value is TokenVNode<T> {
