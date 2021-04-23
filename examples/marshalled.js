@@ -1,4 +1,4 @@
-import { createVNode, hydrate, hydrateChildren } from "../dist/index.js";
+import { createNode, hydrate, hydrateChildren } from "../dist/index.js";
 import { asyncExtendedIterable } from "iterable";
 
 const context = {
@@ -8,7 +8,7 @@ const context = {
   }
 };
 
-const node = createVNode(
+const node = createNode(
   {
     reference: 1,
     source: "main",

@@ -3,43 +3,7 @@ import { createFragment, Fragment } from "../fragment";
 import { isVNode, VNode } from "../vnode";
 import { isSourceReference, SourceReference } from "../source-reference";
 import { filtered } from "../filter";
-
-const Token = Symbol("Token");
-
-export interface Token<T extends SourceReference> extends VNode {
-    (...args: unknown[]): Token<T>;
-    source: T;
-    [Token]: true;
-    children: never;
-}
-
-function createToken<T extends SourceReference>(input: T): Token<T> {
-    // Type yoga
-    let tokenized: Token<T>;
-    function token(): Token<T> {
-        return tokenized;
-    }
-    Object.assign(token, {
-        [Token]: true,
-        reference: Token,
-        source: input
-    });
-    const almost: unknown = token;
-    assertToken(almost, (value: unknown): value is T => value === input);
-    tokenized = almost;
-    return almost;
-}
-
-function isToken<T extends SourceReference = SourceReference>(value: unknown, isTokenSource?: (value: unknown) => value is T): value is Token<T> {
-    return typeof value === "function" && isVNode(value) && (isTokenSource ?? isSourceReference)(value.source);
-}
-
-function assertToken<T extends SourceReference = SourceReference>(value: unknown, isTokenSource?: (value: unknown) => value is T): asserts value is Token<T> {
-    if (!isToken(value, isTokenSource)) {
-        throw new Error("Expected token");
-    }
-}
-
+import { createToken } from "../token";
 
 describe("Design", () => {
 

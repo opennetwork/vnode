@@ -1,5 +1,5 @@
 import { VNodeRepresentationSource } from "./vnode";
-import { createVNode } from "./create-node";
+import { createNode } from "./create-node";
 
 /**
  * `unique symbol` to represent a {@link FragmentVNode}, this will be used on the {@link VNode.reference} property.
@@ -8,5 +8,5 @@ import { createVNode } from "./create-node";
 export const Fragment = Symbol.for("@opennetwork/vnode/fragment");
 
 export function createFragment(options: Record<string, unknown>, ...children: VNodeRepresentationSource[]) {
-  return createVNode(Fragment, options, ...children);
+  return createNode(Fragment, options, ...children);
 }

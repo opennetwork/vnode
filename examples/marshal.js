@@ -1,4 +1,4 @@
-import { createVNode, marshal, hydrateChildren } from "../dist/index.js";
+import { createNode, marshal, hydrateChildren } from "../dist/index.js";
 
 const context = {
   hydrate: async (node, tree) => {
@@ -7,7 +7,7 @@ const context = {
   }
 };
 
-const node = createVNode(
+const node = createNode(
   {
     reference: 1,
     source: "main",

@@ -1,4 +1,4 @@
-import { WeakVContext, createVNode, hydrate, hydrateChildren } from "../dist/index.js";
+import { WeakVContext, createNode, hydrate, hydrateChildren } from "../dist/index.js";
 import { asyncExtendedIterable, source } from "iterable";
 import htm from "htm";
 
@@ -44,7 +44,7 @@ class DOMContext extends WeakVContext {
 }
 
 const currentContext = new DOMContext();
-const h = createVNode;
+const h = createNode;
 const html = htm.bind(h);
 
 const promise = asyncExtendedIterable(currentContext.eventsTarget.hydrate)
