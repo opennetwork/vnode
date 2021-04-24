@@ -28,6 +28,9 @@ import {
 import { children as childrenGenerator } from "./children";
 import { Fragment } from "./fragment";
 
+// Access to re-assign a functional vnode child between children reads
+export const Child = Symbol("Function VNode Child");
+
 export type CreateNodeFragmentSource =
   | AsyncIterable<unknown>
   | Iterable<unknown>
@@ -305,28 +308,41 @@ export function createNode<O extends object = object>(source: Source<O>, options
   }
 
   function functionVNode(source: SourceReferenceRepresentationFactory<O>): VNode {
-    if (isVNode(source)) {
-      // If we have a function that is also a vnode, it is thought to be self referencing, this is most likely a
-      // tokenized component
-      return source;
-    }
     const defaultOptions = {};
     const resolvedOptions = isDefaultOptionsO(defaultOptions) ? defaultOptions : options;
 
-    const node = {
+    const node: VNode & {
+      [Child]?: VNode,
+      source: typeof source,
+      options: typeof resolvedOptions
+    } = {
       reference: Fragment,
       source,
       options: resolvedOptions,
-      children: replay(() => functionAsChildren())
+      children: replay(() => functionAsChildren()),
     };
     return node;
 
     async function *functionAsChildren(): AsyncIterable<ReadonlyArray<VNode>> {
+      // Lazy create the children when the function is first invoked
+      // This allows children to be a bit more dynamic
+      const child = node[Child] = node[Child] ?? createNode(Fragment, {}, ...children);
+
       // Referencing node here allows for external to update the nodes implementation on the fly...
-      const nextSource = node.source(node.options, createNode(Fragment, {}, ...children));
-      yield Object.freeze([
-        createNode(nextSource, options, undefined)
-      ]);
+      const nextSource = node.source(node.options, child);
+      // If the nextSource is the same as node.source, then we should finish here, it will always return itself
+      // If node.source returns a promise then we can safely assume this was intentional as a "loop" around
+      // A function can also return an iterator (async or sync) that returns itself too
+      //
+      // This is to only detect hard loops
+      // We will also reference the options here, as they might have been re-assigned, meaning the possible return from
+      // this function has changed, meaning the return value could be different
+      const possibleMatchingSource: unknown = nextSource;
+      if (possibleMatchingSource !== node.source) {
+        yield [
+          createNode(nextSource, options, undefined)
+        ];
+      }
     }
 
     function isDefaultOptionsO(value: unknown): value is O {
