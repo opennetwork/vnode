@@ -1,6 +1,6 @@
 import { h } from "../h";
 import { filteredChildren } from "../filter";
-import { createToken, isTokenVNode, TokenVNodeFn } from "../token";
+import { createToken, isTokenVNode, TokenOptionsRecord, TokenVNodeFn } from "../token";
 import { createFragment } from "../fragment";
 import { createNode } from "../create-node";
 
@@ -32,7 +32,7 @@ describe("Tokens", () => {
         LastNameInput.assert(lastName);
     });
 
-    interface InputChildrenOptions {
+    interface InputChildrenOptions extends TokenOptionsRecord {
         option?: number | string;
     }
 
@@ -40,7 +40,7 @@ describe("Tokens", () => {
     type InputChildrenNode = TokenVNodeFn<typeof InputChildrenSymbol, InputChildrenOptions>;
     const InputChildren: InputChildrenNode = createToken(InputChildrenSymbol);
 
-    interface InputOptions {
+    interface InputOptions extends TokenOptionsRecord {
         type: string;
     }
 

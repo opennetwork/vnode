@@ -51,8 +51,8 @@ export interface TokenVNode<T extends SourceReference = SourceReference, O exten
   assertFn: AssertTokenVNodeFnFn<T, O>;
 }
 
-export interface TokenVNodeFn<T extends SourceReference = SourceReference, O extends TokenOptions = TokenOptions> extends TokenVNode<T, O> {
-  (options?: Partial<O>, child?: VNode): TokenVNode<T, O>;
+export interface TokenVNodeFn<T extends SourceReference = SourceReference, O extends object = object> extends TokenVNode<T, O & TokenOptionsRecord> {
+  (options?: Partial<O | TokenOptionsRecord>, child?: VNode): TokenVNode<T, O & TokenOptionsRecord>;
 }
 
 export function createToken<T extends SourceReference, O extends TokenOptions = TokenOptions>(source: T, options?: O, ...children: VNodeRepresentationSource[]): TokenVNodeFn<T, O> {
