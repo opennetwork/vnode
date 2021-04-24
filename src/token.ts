@@ -49,7 +49,7 @@ export interface TokenVNodeFn<T extends SourceReference = SourceReference, O ext
   (options?: Partial<O>, child?: VNode): TokenVNode<T, O>;
 }
 
-export function createToken<T extends SourceReference, O extends TokenOptions = TokenOptions>(input: T, options?: O, ...children: VNodeRepresentationSource[]): TokenVNodeFn<T, O> {
+export function createToken<T extends SourceReference, O extends TokenOptions = TokenOptions>(source: T, options?: O, ...children: VNodeRepresentationSource[]): TokenVNodeFn<T, O> {
   type Token = TokenVNodeFn<T, O>;
   let tokenized: TokenVNodeFn<T, O>;
   const isOptionsOptions = isOptionsIsOptions(options) ? options : undefined;
@@ -83,7 +83,7 @@ export function createToken<T extends SourceReference, O extends TokenOptions = 
   }
   Object.assign(token, {
     reference: Token,
-    source: input,
+    source,
     options,
     isTokenSource,
     isTokenOptions,
@@ -94,7 +94,7 @@ export function createToken<T extends SourceReference, O extends TokenOptions = 
     children: children.length ? createFragment(undefined, ...children).children : undefined
   });
   const almost: unknown = token;
-  assertTokenVNodeFn<T, O>(almost, isTokenSource, isOptionsOptions?.isOptions ?? ((value): value is O => value === options));
+  assertTokenVNodeFn<T, O>(almost, isTokenSource, isOptionsOptions?.isOptions ?? ((value): value is O => Object.is(value, options)));
   tokenized = almost;
   return tokenized;
 
@@ -115,7 +115,7 @@ export function createToken<T extends SourceReference, O extends TokenOptions = 
   }
 
   function isTokenSource(value: unknown): value is T {
-    return value === input;
+    return Object.is(value, source);
   }
 
   function isTokenOptions(value: unknown): value is O {
@@ -124,7 +124,7 @@ export function createToken<T extends SourceReference, O extends TokenOptions = 
 
   function isOptionsIsOptions(value: unknown): value is { isOptions(value: unknown): value is O } {
     function isOptionsIsOptionsLike(value: unknown): value is { isOptions: unknown } {
-      return !!options;
+      return !!value;
     }
     return options === value && isOptionsIsOptionsLike(value) && typeof value.isOptions === "function";
   }
