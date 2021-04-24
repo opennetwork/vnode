@@ -7,7 +7,13 @@ import { filtered, filteredChildren } from "./filter";
 
 export const Token = Symbol.for("@opennetwork/vnode/token");
 
-export type TokenOptions = object;
+export const IsTokenOptions = Symbol.for("@opennetwork/vnode/token/isTokenOptions");
+
+export type TokenOptionsRecord = Record<string | symbol | number, unknown>;
+
+export interface TokenOptions extends TokenOptionsRecord {
+  [IsTokenOptions]?(value: unknown): boolean;
+}
 
 export interface IsTokenSourceVNodeFn<T extends SourceReference = SourceReference> {
   (value: unknown): value is T;
@@ -71,7 +77,7 @@ export function createToken<T extends SourceReference, O extends TokenOptions = 
         children: createFragment(undefined, child).children
       };
     }
-    assertTokenVNode<T, O>(nextNode, node.isTokenSource, isOptionsOptions?.isOptions ?? ((value): value is O => value === nextNode.options));
+    assertTokenVNode<T, O>(nextNode, node.isTokenSource, isOptionsOptions?.[IsTokenOptions] ?? ((value): value is O => value === nextNode.options));
     if (nextNode === node) {
       // Terminates the node, will no longer be a function
       return {
@@ -94,7 +100,7 @@ export function createToken<T extends SourceReference, O extends TokenOptions = 
     children: children.length ? createFragment(undefined, ...children).children : undefined
   });
   const almost: unknown = token;
-  assertTokenVNodeFn<T, O>(almost, isTokenSource, isOptionsOptions?.isOptions ?? ((value): value is O => Object.is(value, options)));
+  assertTokenVNodeFn<T, O>(almost, isTokenSource, isOptionsOptions?.[IsTokenOptions] ?? ((value): value is O => Object.is(value, options)));
   tokenized = almost;
   return tokenized;
 
@@ -119,14 +125,14 @@ export function createToken<T extends SourceReference, O extends TokenOptions = 
   }
 
   function isTokenOptions(value: unknown): value is O {
-    return isOptionsOptions?.isOptions?.(value) ?? true;
+    return isOptionsOptions?.[IsTokenOptions]?.(value) ?? true;
   }
 
-  function isOptionsIsOptions(value: unknown): value is { isOptions(value: unknown): value is O } {
-    function isOptionsIsOptionsLike(value: unknown): value is { isOptions: unknown } {
+  function isOptionsIsOptions(value: unknown): value is { [IsTokenOptions](value: unknown): value is O } {
+    function isOptionsIsOptionsLike(value: unknown): value is { [IsTokenOptions]: unknown } {
       return !!value;
     }
-    return options === value && isOptionsIsOptionsLike(value) && typeof value.isOptions === "function";
+    return options === value && isOptionsIsOptionsLike(value) && typeof value[IsTokenOptions] === "function";
   }
 }
 
