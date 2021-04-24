@@ -19,28 +19,28 @@ export interface IsTokenSourceVNodeFn<T extends SourceReference = SourceReferenc
   (value: unknown): value is T;
 }
 
-export interface IsTokenOptionsVNodeFn<O extends TokenOptions = TokenOptions> {
+export interface IsTokenOptionsVNodeFn<O extends object = object> {
   (value: unknown): value is O;
 }
 
-export interface IsTokenVNodeFn<T extends SourceReference = SourceReference, O extends TokenOptions = TokenOptions> {
+export interface IsTokenVNodeFn<T extends SourceReference = SourceReference, O extends object = object> {
   (value: unknown): value is TokenVNode<T, O>;
 }
 
-export interface IsTokenVNodeFnFn<T extends SourceReference = SourceReference, O extends TokenOptions = TokenOptions> {
+export interface IsTokenVNodeFnFn<T extends SourceReference = SourceReference, O extends object = object> {
   (value: unknown): value is TokenVNodeFn<T, O>;
 }
 
-export interface AssertTokenVNodeFn<T extends SourceReference = SourceReference, O extends TokenOptions = TokenOptions> {
+export interface AssertTokenVNodeFn<T extends SourceReference = SourceReference, O extends object = object> {
   (value: unknown): asserts value is TokenVNode<T, O>;
 }
 
-export interface AssertTokenVNodeFnFn<T extends SourceReference = SourceReference, O extends TokenOptions = TokenOptions> {
+export interface AssertTokenVNodeFnFn<T extends SourceReference = SourceReference, O extends object = object> {
   (value: unknown): value is TokenVNodeFn<T, O>;
 }
 
-export interface TokenVNode<T extends SourceReference = SourceReference, O extends TokenOptions = TokenOptions> extends VNode {
-  options: O;
+export interface TokenVNode<T extends SourceReference = SourceReference, O extends object = object> extends VNode {
+  options: O & TokenOptions;
   source: T;
   reference: typeof Token;
   isTokenSource: IsTokenSourceVNodeFn<T>;
@@ -55,12 +55,12 @@ export interface TokenVNodeFn<T extends SourceReference = SourceReference, O ext
   (options?: Partial<O | TokenOptionsRecord>, child?: VNode): TokenVNode<T, O & TokenOptionsRecord>;
 }
 
-export function createToken<T extends SourceReference, O extends TokenOptions = TokenOptions>(source: T, options?: O, ...children: VNodeRepresentationSource[]): TokenVNodeFn<T, O> {
+export function createToken<T extends SourceReference, O extends object = object>(source: T, options?: O, ...children: VNodeRepresentationSource[]): TokenVNodeFn<T, O> {
   type Token = TokenVNodeFn<T, O>;
   let tokenized: TokenVNodeFn<T, O>;
   const isOptionsOptions = isOptionsIsOptions(options) ? options : undefined;
   function token(this: unknown, partialOptions?: Partial<O>, child?: VNode): TokenVNode<T, O> {
-    const node = isTokenVNode<T, O>(this) ? this : tokenized;
+    const node = isTokenVNode<T, O & TokenOptions>(this) ? this : tokenized;
     let nextNode: Pick<Token, keyof Token> = node;
     if (partialOptions && hasOwnPropertyAvailable(partialOptions)) {
       nextNode = {
@@ -136,15 +136,15 @@ export function createToken<T extends SourceReference, O extends TokenOptions = 
   }
 }
 
-export function isTokenVNode<T extends SourceReference = SourceReference, O extends TokenOptions = TokenOptions>(value: unknown, isTokenSource?: (value: unknown) => value is T, isTokenOptions?: (value: unknown) => value is O): value is TokenVNode<T, O> {
+export function isTokenVNode<T extends SourceReference = SourceReference, O extends object = object>(value: unknown, isTokenSource?: (value: unknown) => value is T, isTokenOptions?: (value: unknown) => value is O): value is TokenVNode<T, O> {
   return isVNode(value) && (typeof isTokenSource === "function" ? isTokenSource : isSourceReference)(value.source) && value.reference === Token && (typeof isTokenOptions === "function" ? isTokenOptions(value.options) : true);
 }
 
-export function isTokenVNodeFn<T extends SourceReference = SourceReference, O extends TokenOptions = TokenOptions>(value: unknown, isTokenSource?: (value: unknown) => value is T, isTokenOptions?: (value: unknown) => value is O): value is TokenVNodeFn<T, O> {
+export function isTokenVNodeFn<T extends SourceReference = SourceReference, O extends object = object>(value: unknown, isTokenSource?: (value: unknown) => value is T, isTokenOptions?: (value: unknown) => value is O): value is TokenVNodeFn<T, O> {
   return typeof value === "function" && isTokenVNode(value, isTokenSource, isTokenOptions);
 }
 
-export function assertTokenVNode<T extends SourceReference = SourceReference, O extends TokenOptions = TokenOptions>(value: unknown, isTokenSource?: (value: unknown) => value is T, isTokenOptions?: (value: unknown) => value is O): asserts value is TokenVNode<T, O> {
+export function assertTokenVNode<T extends SourceReference = SourceReference, O extends object = object>(value: unknown, isTokenSource?: (value: unknown) => value is T, isTokenOptions?: (value: unknown) => value is O): asserts value is TokenVNode<T, O> {
   return assert(value, {
     is(value): value is TokenVNode<T, O> {
       return isTokenVNode(value, isTokenSource, isTokenOptions);
@@ -153,7 +153,7 @@ export function assertTokenVNode<T extends SourceReference = SourceReference, O 
   });
 }
 
-export function assertTokenVNodeFn<T extends SourceReference = SourceReference, O extends TokenOptions = TokenOptions>(value: unknown, isTokenSource?: (value: unknown) => value is T, isTokenOptions?: (value: unknown) => value is O): asserts value is TokenVNodeFn<T, O> {
+export function assertTokenVNodeFn<T extends SourceReference = SourceReference, O extends object = object>(value: unknown, isTokenSource?: (value: unknown) => value is T, isTokenOptions?: (value: unknown) => value is O): asserts value is TokenVNodeFn<T, O> {
   return assert(value, {
     is(value): value is TokenVNodeFn<T, O> {
       return isTokenVNodeFn(value, isTokenSource, isTokenOptions);

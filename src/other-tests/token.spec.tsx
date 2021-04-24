@@ -32,7 +32,7 @@ describe("Tokens", () => {
         LastNameInput.assert(lastName);
     });
 
-    interface InputChildrenOptions extends TokenOptionsRecord {
+    interface InputChildrenOptions {
         option?: number | string;
     }
 
@@ -40,7 +40,7 @@ describe("Tokens", () => {
     type InputChildrenNode = TokenVNodeFn<typeof InputChildrenSymbol, InputChildrenOptions>;
     const InputChildren: InputChildrenNode = createToken(InputChildrenSymbol);
 
-    interface InputOptions extends TokenOptionsRecord {
+    interface InputOptions {
         type: string;
     }
 
