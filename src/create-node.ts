@@ -368,17 +368,17 @@ export function createNode<O extends object = object>(source: Source<O>, options
       ...source,
       // Replace our reference if required
       reference: isSourceReference(source.reference) ? getMarshalledReference(source.reference) : getReference(source.options),
-      children: replay(() => asyncExtendedIterable(source.children).map(children => Object.freeze([...children].map(unmarshal))).toIterable())
+      children: source.children ? replay(() => asyncExtendedIterable(source.children).map(children => Object.freeze([...children].map(unmarshal))).toIterable()) : undefined
     };
   }
 
   function sourceReferenceVNode(reference: SourceReference, source: SourceReference, options?: object, ...children: VNodeRepresentationSource[]): VNode {
     return {
       reference: reference || getReference(options),
-      scalar: !!children.length,
+      scalar: !children.length,
       source,
       options,
-      children: replay(() => childrenGenerator(createNode, ...children))
+      children: children.length ? replay(() => childrenGenerator(createNode, ...children)) : undefined
     };
   }
 
