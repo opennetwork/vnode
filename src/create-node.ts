@@ -324,23 +324,33 @@ export function createNode<O extends object = object>(source: Source<O>, options
     return node;
 
     async function *functionAsChildren(): AsyncIterable<ReadonlyArray<VNode>> {
+      const options = node.options;
+      const source = node.source;
+
       // Lazy create the children when the function is first invoked
       // This allows children to be a bit more dynamic
-      const child = node[Child] = node[Child] ?? createNode(Fragment, {}, ...children);
+      //
+      // We will only provide a child to node.source if we have at least one child provided
+      const child = node[Child] = node[Child] ?? children.length ? createNode(Fragment, {}, ...children) : undefined;
 
       // Referencing node here allows for external to update the nodes implementation on the fly...
-      const nextSource = node.source(node.options, child);
+      const nextSource = source(options, child);
       // If the nextSource is the same as node.source, then we should finish here, it will always return itself
       // If node.source returns a promise then we can safely assume this was intentional as a "loop" around
       // A function can also return an iterator (async or sync) that returns itself too
       //
       // This is to only detect hard loops
-      // We will also reference the options here, as they might have been re-assigned, meaning the possible return from
-      // this function has changed, meaning the return value could be different
+      // We will also reference the different dependency here, as they might have been re-assigned,
+      // meaning the possible return from this function has changed, meaning the return value could be different
       const possibleMatchingSource: unknown = nextSource;
-      if (possibleMatchingSource !== node.source) {
+      if (
+        possibleMatchingSource !== source ||
+        source !== node.source ||
+        options !== node.options ||
+        child !== node[Child]
+      ) {
         yield [
-          createNode(nextSource, options, undefined)
+          createNode(nextSource)
         ];
       }
     }

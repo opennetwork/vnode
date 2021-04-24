@@ -1,8 +1,9 @@
 import { isSourceReference, SourceReference } from "./source-reference";
-import { isVNode, VNode } from "./vnode";
+import { isVNode, VNode, VNodeRepresentationSource } from "./vnode";
 import { assert } from "./assert";
 import { createNode } from "./create-node";
 import { createFragment, Fragment } from "./fragment";
+import { filtered, filteredChildren } from "./filter";
 
 export const Token = Symbol.for("@opennetwork/vnode/token");
 
@@ -48,9 +49,10 @@ export interface TokenVNodeFn<T extends SourceReference = SourceReference, O ext
   (options?: Partial<O>, child?: VNode): TokenVNode<T, O>;
 }
 
-export function createToken<T extends SourceReference, O extends TokenOptions = TokenOptions>(input: T, options?: O, isOptions?: IsTokenOptionsVNodeFn<O>): TokenVNodeFn<T, O> {
+export function createToken<T extends SourceReference, O extends TokenOptions = TokenOptions>(input: T, options?: O, ...children: VNodeRepresentationSource[]): TokenVNodeFn<T, O> {
   type Token = TokenVNodeFn<T, O>;
   let tokenized: TokenVNodeFn<T, O>;
+  const isOptionsOptions = isOptionsIsOptions(options) ? options : undefined;
   function token(this: unknown, partialOptions?: Partial<O>, child?: VNode): TokenVNode<T, O> {
     const node = isTokenVNode<T, O>(this) ? this : tokenized;
     let nextNode: Pick<Token, keyof Token> = node;
@@ -69,7 +71,7 @@ export function createToken<T extends SourceReference, O extends TokenOptions = 
         children: createFragment(undefined, child).children
       };
     }
-    assertTokenVNode<T, O>(nextNode, node.isTokenSource, isOptions ?? ((value): value is O => value === nextNode.options));
+    assertTokenVNode<T, O>(nextNode, node.isTokenSource, isOptionsOptions?.isOptions ?? ((value): value is O => value === nextNode.options));
     if (nextNode === node) {
       // Terminates the node, will no longer be a function
       return {
@@ -88,10 +90,11 @@ export function createToken<T extends SourceReference, O extends TokenOptions = 
     assert,
     assertFn,
     is,
-    isFn
+    isFn,
+    children: children.length ? createFragment(undefined, ...children).children : undefined
   });
   const almost: unknown = token;
-  assertTokenVNodeFn<T, O>(almost, isTokenSource, isOptions ?? ((value): value is O => value === options));
+  assertTokenVNodeFn<T, O>(almost, isTokenSource, isOptionsOptions?.isOptions ?? ((value): value is O => value === options));
   tokenized = almost;
   return tokenized;
 
@@ -116,12 +119,19 @@ export function createToken<T extends SourceReference, O extends TokenOptions = 
   }
 
   function isTokenOptions(value: unknown): value is O {
-    return isOptions?.(value) ?? true;
+    return isOptionsOptions?.isOptions?.(value) ?? true;
+  }
+
+  function isOptionsIsOptions(value: unknown): value is { isOptions(value: unknown): value is O } {
+    function isOptionsIsOptionsLike(value: unknown): value is { isOptions: unknown } {
+      return !!options;
+    }
+    return options === value && isOptionsIsOptionsLike(value) && typeof value.isOptions === "function";
   }
 }
 
 export function isTokenVNode<T extends SourceReference = SourceReference, O extends TokenOptions = TokenOptions>(value: unknown, isTokenSource?: (value: unknown) => value is T, isTokenOptions?: (value: unknown) => value is O): value is TokenVNode<T, O> {
-  return isVNode(value) && (isTokenSource ?? isSourceReference)(value.source) && value.reference === Token && (isTokenOptions?.(value.options) ?? true);
+  return isVNode(value) && (typeof isTokenSource === "function" ? isTokenSource : isSourceReference)(value.source) && value.reference === Token && (typeof isTokenOptions === "function" ? isTokenOptions(value.options) : true);
 }
 
 export function isTokenVNodeFn<T extends SourceReference = SourceReference, O extends TokenOptions = TokenOptions>(value: unknown, isTokenSource?: (value: unknown) => value is T, isTokenOptions?: (value: unknown) => value is O): value is TokenVNodeFn<T, O> {

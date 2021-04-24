@@ -32,22 +32,30 @@ describe("Tokens", () => {
         LastNameInput.assert(lastName);
     });
 
-    interface InputOptions {
-        type: string;
-    }
     interface InputChildrenOptions {
         option?: number | string;
     }
 
-    const InputSymbol = Symbol("Input");
-    type InputNode = TokenVNodeFn<typeof InputSymbol, InputOptions>;
-    const Input: InputNode = createToken(InputSymbol, {
-        type: "text"
-    });
-
     const InputChildrenSymbol = Symbol("InputChildren");
     type InputChildrenNode = TokenVNodeFn<typeof InputChildrenSymbol, InputChildrenOptions>;
     const InputChildren: InputChildrenNode = createToken(InputChildrenSymbol);
+
+    interface InputOptions {
+        type: string;
+    }
+
+    const defaultInputChildOption = Math.random();
+
+    const InputSymbol = Symbol("Input");
+    type InputNode = TokenVNodeFn<typeof InputSymbol, InputOptions>;
+    const Input: InputNode = createToken(
+        InputSymbol,
+        {
+         type: "text"
+        },
+        // Default children
+        <InputChildren option={defaultInputChildOption} />
+    );
 
     it("allows default options", async () => {
         const defaultType = `${Math.random()}`;
@@ -74,10 +82,31 @@ describe("Tokens", () => {
 
     it("allows default children", async () => {
 
+        const tokens = await last(filteredChildren(<Input />, isTokenVNode));
+
+        expect(tokens).toBeTruthy();
+        expect(tokens).toHaveLength(1);
+
+        const [input] = tokens;
+        Input.assert(input);
+
+        const inputChildrenTokens = await last(filteredChildren(input, InputChildren.is));
+        expect(inputChildrenTokens).toBeTruthy();
+        expect(inputChildrenTokens).toHaveLength(1);
+        const [childToken] = inputChildrenTokens;
+        InputChildren.is(childToken);
+        expect(childToken.options.option).toEqual(defaultInputChildOption);
+
+    });
+
+    it("allows given children", async () => {
+
+        const expected = Math.random();
+
         const tokens = await last(
             filteredChildren((
                 <Input>
-                    <InputChildren />
+                    <InputChildren option={expected} />
                 </Input>
             ), isTokenVNode)
         );
@@ -93,10 +122,11 @@ describe("Tokens", () => {
         expect(inputChildrenTokens).toHaveLength(1);
         const [childToken] = inputChildrenTokens;
         InputChildren.is(childToken);
+        expect(childToken.options.option).toEqual(expected);
 
     });
 
-    it("allows other children", async () => {
+    it("allows multiple children", async () => {
 
         const inputChild1Option = Math.random();
         const inputChild2Option = Math.random();

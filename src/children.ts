@@ -28,7 +28,7 @@ export async function *children(createNode: (source: Source<never>) => VNode, ..
     }
 
     if (isFragmentVNode(source)) {
-      return yield* source.children;
+      return yield* source.children ?? [];
     }
 
     if (isVNode(source)) {
