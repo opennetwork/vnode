@@ -283,20 +283,17 @@ export function createNode<O extends object = object>(source: Source<O>, options
    * @param reference
    */
   async function *generator(newReference: SourceReference, reference: IterableIterator<SourceReference> | AsyncIterableIterator<SourceReference>): AsyncIterable<ReadonlyArray<VNode>> {
-    const childrenInstance = childrenGenerator(createNode, ...children);
     let next: IteratorResult<SourceReference>;
     do {
       next = await getNext(reference, newReference);
       if (next.done) {
         continue;
       }
-      const node = createNode(next.value, options, childrenInstance);
-      if (!isFragmentVNode(node) || !node.children) {
-        // Let it do its thing
-        yield Object.freeze([node]);
-      } else {
-        yield* node.children;
+      const nextNode = createNode(next.value);
+      if (isFragmentVNode(nextNode)) {
+        yield* nextNode.children ?? [];
       }
+      yield Object.freeze([nextNode]);
     } while (!next.done);
   }
 
