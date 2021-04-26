@@ -40,4 +40,6 @@ export interface VContext<
    */
   close?: () => Promise<void>;
 
+  catch?: (error: unknown, node: VNode, tree?: Tree) => void | Promise<void>;
+
 }

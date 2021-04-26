@@ -35,8 +35,20 @@ export async function hydrateChildrenGroup(context: VContext, node: VNode, tree:
    * Wait for all children to hydrate
    */
   await Promise.all(
-    children.map(child => hydrate(context, child, nextTree))
+    children.map(hydrateChild)
   );
+
+  async function hydrateChild(child: VNode) {
+    try {
+      await hydrate(context, child, nextTree);
+    } catch (error) {
+      if (context.catch) {
+        await context.catch(error, child, nextTree);
+      } else {
+        throw error;
+      }
+    }
+  }
 }
 
 /**
@@ -56,8 +68,16 @@ export async function hydrateChildren(context: VContext, node: VNode, tree?: Tre
   if (!node.children) {
     return;
   }
-  for await (const nextChildren of node.children) {
-    await hydrateChildrenGroup(context, node, tree, nextChildren);
+  try {
+    for await (const nextChildren of node.children) {
+      await hydrateChildrenGroup(context, node, tree, nextChildren);
+    }
+  } catch (error) {
+    if (context.catch) {
+      await context.catch(error, node, tree);
+    } else {
+      throw error;
+    }
   }
 }
 
@@ -74,5 +94,13 @@ export async function hydrate(context: VContext, node: VNode, tree?: Tree) {
   if (!context.hydrate || !node) {
     return;
   }
-  return context.hydrate(node, tree);
+  try {
+    return await context.hydrate(node, tree);
+  } catch (error) {
+    if (context.catch) {
+      await context.catch(error, node, tree);
+    } else {
+      throw error;
+    }
+  }
 }
