@@ -32,7 +32,6 @@
     "@babel/preset-react": "^7.13.13",
     "@babel/preset-typescript": "^7.13.0",
     "@opennetwork/progressive-merge": "^5.1.1",
-    "@opennetwork/vdom": "^20.1.0",
     "@opennetwork/vnode-test": "^1.0.3",
     "@types/jest": "^26.0.22",
     "@types/node": "^12.7.4",

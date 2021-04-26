@@ -1,7 +1,18 @@
-import { hydrate } from "../hydrate";
+import { hydrate, hydrateChildren } from "../hydrate";
 import { Component } from "typedoc/dist/lib/utils";
 import { h } from "../h";
-import { render } from "@opennetwork/vdom";
+import { VNode } from "../vnode";
+import { VContext } from "../vcontext";
+// import { render } from "@opennetwork/vdom";
+
+async function render(node: VNode, unused: Element) {
+    const context: VContext = {
+        async hydrate(node, tree) {
+            await hydrateChildren(context, node, tree);
+        }
+    };
+    await hydrate(context, node);
+}
 
 describe("Errors", function () {
 

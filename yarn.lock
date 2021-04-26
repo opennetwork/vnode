@@ -1145,11 +1145,6 @@
   resolved "https://registry.npmjs.org/@opennetwork/progressive-merge/-/progressive-merge-5.1.1.tgz#c4cf4086a47883cc25fea5bd38d15c1a81ae550d"
   integrity sha512-GyDyKaQoEszWFzIjEO7MFrU4TCv6fTiXrKl3w+Fr4TU90cQ/gtFhO+vBq9aaqC/KvU8Rw1F4hbUBgV07SZDwoA==
 
-"@opennetwork/vdom@^20.1.0":
-  version "20.1.0"
-  resolved "https://registry.npmjs.org/@opennetwork/vdom/-/vdom-20.1.0.tgz#2c4bc0a08d6d8392d16fb010f14c55ba3f9029f2"
-  integrity sha512-OETMLSjfk09rbJryjUVco8WUV1IzCQ9kNHEEG/1QI0zKsR6+PpSLv/shnIXReu119nWaozUYeW4ktdkLg+E+3g==
-
 "@opennetwork/vnode-test@^1.0.3":
   version "1.0.3"
   resolved "https://registry.npmjs.org/@opennetwork/vnode-test/-/vnode-test-1.0.3.tgz#6992bb2212300acfa578581202ef18f37f91b79d"
