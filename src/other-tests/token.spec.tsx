@@ -1,6 +1,6 @@
 import { h } from "../h";
 import { filtered, filteredChildren } from "../filter";
-import { createToken, isTokenVNode, TokenVNode, TokenVNodeFn } from "../token";
+import { createToken, isTokenVNode, TokenInitialOptions, TokenVNode, TokenVNodeBase, TokenVNodeFn } from "../token";
 import { createFragment } from "../fragment";
 import { createNode } from "../create-node";
 import { URL } from "url";
@@ -44,27 +44,30 @@ describe("Tokens", () => {
     const InputChildren: InputChildrenNode = createToken(InputChildrenSymbol);
 
     interface InputOptions {
-        type?: string;
+        type: string;
     }
 
     const defaultInputChildOption = Math.random();
 
     const InputSymbol = Symbol("Input");
-    type InputNode = TokenVNodeFn<typeof InputSymbol, InputOptions>;
-    const Input: InputNode = createToken(
+    type InputNode = TokenVNodeBase<typeof InputSymbol, InputOptions>;
+    const defaultInputOptions = {
+        type: "text"
+    };
+    type InputNodeFn = TokenVNodeFn<typeof InputSymbol, TokenInitialOptions<InputOptions, typeof defaultInputOptions>>;
+    const Input: InputNodeFn = createToken<typeof InputSymbol, InputOptions, typeof defaultInputOptions>(
         InputSymbol,
-        {
-         type: "text"
-        },
+        defaultInputOptions,
         // Default children
         <InputChildren option={defaultInputChildOption} />
     );
 
     it("allows default options", async () => {
         const defaultType = `${Math.random()}`;
-        const Input: InputNode = createToken(InputSymbol, {
+        const defaultOptions = {
             type: defaultType
-        });
+        };
+        const Input: InputNodeFn = createToken<typeof InputSymbol, InputOptions, typeof defaultOptions>(InputSymbol, defaultOptions);
         const tokens = await last(filteredChildren(<Input />, isTokenVNode));
         expect(tokens).toBeTruthy();
         expect(tokens).toHaveLength(1);

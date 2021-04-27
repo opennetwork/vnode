@@ -87,14 +87,10 @@ export function createToken<T extends SourceReference, O extends object = object
       };
     }
     assertTokenVNode<T, I & O>(nextNode, node.isTokenSource, isCompleteOptions);
-    if (nextNode === node) {
-      // Terminates the node, will no longer be a function
-      return {
-        ...nextNode
-      };
-    } else {
-      return nextNode;
-    }
+    // Terminates the node, will no longer be a function if it still was one
+    return {
+      ...nextNode
+    };
 
     function isCompleteOptions(value: unknown): value is I & O {
       if (isOptionsOptions?.[IsTokenOptions]) {
