@@ -1,5 +1,5 @@
-import { VContext } from "./vcontext";
-import {
+import type { VContext } from "./vcontext";
+import type {
   Source,
   SourceReferenceRepresentationFactory
 } from "./source";
@@ -27,6 +27,9 @@ import {
 } from "iterable";
 import { children as childrenGenerator } from "./children";
 import { Fragment } from "./fragment";
+import type { Tree } from "./tree";
+import { Catch, CatchFn } from "./catch";
+import { aggregateError } from "./aggregate-error";
 
 // Access to re-assign a functional vnode child between children reads
 export const Child = Symbol("Function VNode Child");
@@ -308,8 +311,11 @@ export function createNode<O extends object = object>(source: Source<O>, options
     const defaultOptions = {};
     const resolvedOptions = isDefaultOptionsO(defaultOptions) ? defaultOptions : options;
 
+    let errors: unknown[] = [];
+
     const node: VNode & {
       [Child]?: VNode,
+      [Catch]?: CatchFn,
       source: typeof source,
       options: typeof resolvedOptions
     } = {
@@ -332,6 +338,7 @@ export function createNode<O extends object = object>(source: Source<O>, options
 
       // Referencing node here allows for external to update the nodes implementation on the fly...
       const nextSource = source(options, child);
+
       // If the nextSource is the same as node.source, then we should finish here, it will always return itself
       // If node.source returns a promise then we can safely assume this was intentional as a "loop" around
       // A function can also return an iterator (async or sync) that returns itself too
@@ -340,22 +347,59 @@ export function createNode<O extends object = object>(source: Source<O>, options
       // We will also reference the different dependency here, as they might have been re-assigned,
       // meaning the possible return from this function has changed, meaning the return value could be different
       const possibleMatchingSource: unknown = nextSource;
-      if (
+      const willContinue = (
         possibleMatchingSource !== source ||
         source !== node.source ||
         options !== node.options ||
         child !== node[Child]
-      ) {
+      );
+      if (!willContinue) {
+        return;
+      }
+
+      if (isIterableIterator(nextSource) && typeof nextSource.throw === "function") {
+        yield [
+          catchingIterableIterator(nextSource)
+        ];
+      } else {
         yield [
           createNode(nextSource)
         ];
       }
     }
 
+    function catchingIterableIterator(source: IterableIterator<unknown> | AsyncIterableIterator<unknown>): VNode {
+      if (!node[Catch]) {
+        node[Catch] = (error) => {
+          console.log("e", { error, currentNode, node });
+          errors.push(error);
+        };
+      }
+      async function *CatchingIterableIterator() {
+        let next;
+        do {
+          if (errors.length) {
+            next = await source.throw(aggregateError(errors.map(([error]) => error)));
+            errors = [];
+          } else {
+            next = await source.next();
+          }
+          console.log({ next, errors });
+          if (!next.done) {
+            yield next.value;
+          }
+        } while (!next.done);
+      }
+      const currentNode = createNode(CatchingIterableIterator());
+
+      return currentNode;
+    }
+
     function isDefaultOptionsO(value: unknown): value is O {
       return value === defaultOptions && !options;
     }
   }
+
 
   function unmarshal(source: MarshalledVNode): VNode {
     if (isSourceReference(source)) {

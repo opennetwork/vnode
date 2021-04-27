@@ -43,6 +43,7 @@ export async function hydrateChildrenGroup(context: VContext, node: VNode, tree:
       await hydrate(context, child, nextTree);
     } catch (error) {
       if (context.catch) {
+        console.log("Hydrate child catch");
         await context.catch(error, child, nextTree);
       } else {
         throw error;
@@ -68,17 +69,24 @@ export async function hydrateChildren(context: VContext, node: VNode, tree?: Tre
   if (!node.children) {
     return;
   }
-  try {
-    for await (const nextChildren of node.children) {
-      await hydrateChildrenGroup(context, node, tree, nextChildren);
+  const iterator = node.children[Symbol.asyncIterator]();
+  let nextResult;
+  do {
+    try {
+      nextResult = await iterator.next();
+    } catch (error) {
+      console.log("Yield catch");
+      if (context.catch) {
+        await context.catch(error, node, tree);
+      } else {
+        console.log("throwing because no yield");
+        throw error;
+      }
     }
-  } catch (error) {
-    if (context.catch) {
-      await context.catch(error, node, tree);
-    } else {
-      throw error;
+    if (nextResult?.value) {
+      await hydrateChildrenGroup(context, node, tree, nextResult.value);
     }
-  }
+  } while (!nextResult?.done);
 }
 
 /**
@@ -97,6 +105,7 @@ export async function hydrate(context: VContext, node: VNode, tree?: Tree) {
   try {
     return await context.hydrate(node, tree);
   } catch (error) {
+    console.log("Hydrate catch");
     if (context.catch) {
       await context.catch(error, node, tree);
     } else {

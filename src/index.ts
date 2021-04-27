@@ -12,3 +12,4 @@ export * from "./marshal";
 export * from "./source-reference";
 export * from "./h";
 export * from "./token";
+export * from "./catch";
