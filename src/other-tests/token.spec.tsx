@@ -1,8 +1,11 @@
 import { h } from "../h";
-import { filteredChildren } from "../filter";
-import { createToken, isTokenVNode, TokenOptionsRecord, TokenVNodeFn } from "../token";
+import { filtered, filteredChildren } from "../filter";
+import { createToken, isTokenVNode, TokenVNode, TokenVNodeFn } from "../token";
 import { createFragment } from "../fragment";
 import { createNode } from "../create-node";
+import { URL } from "url";
+import { VNode } from "../vnode";
+import { isIterable } from "iterable";
 
 describe("Tokens", () => {
 
@@ -41,7 +44,7 @@ describe("Tokens", () => {
     const InputChildren: InputChildrenNode = createToken(InputChildrenSymbol);
 
     interface InputOptions {
-        type: string;
+        type?: string;
     }
 
     const defaultInputChildOption = Math.random();
@@ -155,6 +158,132 @@ describe("Tokens", () => {
         InputChildren.is(childToken2);
         expect(childToken1.options.option).toEqual(inputChild1Option);
         expect(childToken2.options.option).toEqual(inputChild2Option);
+
+    });
+
+    describe("models", () => {
+
+        const ThingSymbol = Symbol("Thing");
+        interface ThingOptions {
+            url: URL;
+            sameAs?: URL | Iterable<URL>;
+            name?: string;
+            description?: string;
+            identifier?: string | URL;
+        }
+        type ThingToken = TokenVNode<typeof ThingSymbol, ThingOptions>;
+        type ThingTokenFn = TokenVNodeFn<typeof ThingSymbol, ThingOptions>;
+        const Thing: ThingTokenFn = createToken<typeof ThingSymbol, ThingOptions>(ThingSymbol);
+
+        const PersonSymbol = Symbol("Person");
+        interface PersonOptions extends ThingOptions {
+            knows?: PersonToken | Iterable<PersonToken>;
+            memberOf?: PartyToken | Iterable<PartyToken>;
+        }
+        type PersonToken = TokenVNode<typeof PersonSymbol, PersonOptions>;
+        type PersonTokenFn = TokenVNodeFn<typeof PersonSymbol, PersonOptions>;
+        const Person: PersonTokenFn = createToken<typeof PersonSymbol, PersonOptions>(PersonSymbol);
+
+        type PartyToken = PersonToken | OrganizationToken;
+
+        const OrganizationSymbol = Symbol("Organization");
+        interface OrganizationOptions extends ThingOptions {
+            member?: PartyToken | Iterable<PartyToken>;
+            memberOf?: PartyToken | Iterable<PartyToken>;
+        }
+        type OrganizationToken = TokenVNode<typeof OrganizationSymbol, OrganizationOptions>;
+        type OrganizationTokenFn = TokenVNodeFn<typeof OrganizationSymbol, OrganizationOptions>;
+        const Organization: OrganizationTokenFn = createToken<typeof OrganizationSymbol, OrganizationOptions>(OrganizationSymbol);
+
+        it("models", async () => {
+            const origin = "https://example.com";
+
+            const thing: ThingToken = <Thing
+                url={new URL("/thing/1", origin)}
+            />;
+
+            const firstPerson: PersonToken = <Person
+                url={new URL("/person/first", origin)}
+                name="First Person"
+                knows={{
+                    *[Symbol.iterator]() {
+                        yield secondPerson;
+                    }
+                }}
+                memberOf={{
+                    *[Symbol.iterator]() {
+                        yield firstOrganization;
+                    }
+                }}
+            />;
+
+            const secondPerson: PersonToken = <Person
+                url={new URL("/person/second", origin)}
+                name="Second Person"
+                knows={{
+                    *[Symbol.iterator]() {
+                        yield firstPerson;
+                    }
+                }}
+            />;
+
+            const firstOrganization: OrganizationToken = <Organization
+                url={new URL("/organization/first", origin)}
+                name="First Organization"
+                member={{
+                    *[Symbol.iterator]() {
+                        yield firstPerson;
+                        yield secondOrganization;
+                    }
+                }}
+            />;
+
+            const secondOrganization: OrganizationToken = <Organization
+                url={new URL("/organization/first", origin)}
+                name="Second Organization"
+                member={{
+                    *[Symbol.iterator]() {
+                        yield secondPerson;
+                    }
+                }}
+                memberOf={{
+                    *[Symbol.iterator]() {
+                        yield firstOrganization;
+                    }
+                }}
+            />;
+
+            const things = <>
+                {[
+                    thing,
+                    firstPerson,
+                    secondPerson,
+                    firstOrganization,
+                    secondOrganization
+                ]}
+            </>;
+
+            let tokens;
+
+            for await (const next of await filtered(things, (node: VNode): node is ThingToken | PersonToken | OrganizationToken => (
+                Thing.is(node) ||
+                Person.is(node) ||
+                Organization.is(node)
+            )).children) {
+                tokens = next;
+            }
+
+            expect(tokens).toHaveLength(5);
+            const [, person, , organization] = tokens;
+
+            const members: PartyToken[] = isIterable<PartyToken>(organization.options.member) ?
+                Array.from<PartyToken>(organization.options.member) :
+                [];
+
+            const found = members.find(member => member.options.url.toString() === person.options.url.toString());
+            expect(found.options.url.toString()).toEqual(person.options.url.toString());
+
+        });
 
     });
 

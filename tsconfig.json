@@ -4,10 +4,11 @@
         "lib": [
             "es2018",
             "esnext",
-            "dom"
+            "dom",
         ],
         "types": [
-          "jest"
+          "jest",
+            "node"
         ],
         "esModuleInterop": true,
         "target": "esnext",

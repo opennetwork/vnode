@@ -54,15 +54,22 @@ export interface TokenVNode<T extends SourceReference = SourceReference, O exten
 }
 
 export interface TokenVNodeFn<T extends SourceReference = SourceReference, O extends object = object> extends TokenVNodeBase<T, O> {
-  (options?: Partial<O & TokenOptionsRecord>, child?: VNode): TokenVNode<T, O & TokenOptionsRecord>;
+  <I extends O & Partial<TokenOptionsRecord>>(options?: I, child?: VNode): TokenVNode<T, I>;
 }
 
-export function createToken<T extends SourceReference, O extends object = object>(source: T, options?: Partial<O & TokenOptions>, ...children: VNodeRepresentationSource[]): TokenVNodeFn<T, O> {
-  type Token = TokenVNodeFn<T, O>;
-  let tokenized: TokenVNodeFn<T, O>;
+export type TokenInitialOptions<O extends object, P extends Partial<O & TokenOptions>> =
+  O extends never ?
+    TokenOptions :
+    P extends O ?
+      Pick<O, Exclude<keyof O, keyof P>> & Partial<Pick<O, keyof P & keyof O>> :
+      O;
+
+export function createToken<T extends SourceReference, O extends object = object, P extends Partial<O & TokenOptions> = Partial<O & TokenOptions>>(source: T, options?: P, ...children: VNodeRepresentationSource[]): TokenVNodeFn<T, TokenInitialOptions<O, P>> {
+  type Token = TokenVNodeBase<T, TokenInitialOptions<O, P>>;
+  let tokenized: TokenVNodeFn<T, TokenInitialOptions<O, P>>;
   const isOptionsOptions = isOptionsIsOptions(options) ? options : undefined;
-  function token(this: unknown, partialOptions?: Partial<O & TokenOptions>, child?: VNode): TokenVNode<T, O> {
-    const node = isTokenVNode<T, O>(this) ? this : tokenized;
+  function token<I extends O & Partial<TokenOptionsRecord>>(this: unknown, partialOptions?: I, child?: VNode): TokenVNode<T, I & O> {
+    const node: Token = isTokenVNode<T, TokenInitialOptions<O, P>>(this) ? this : tokenized;
     let nextNode: Pick<Token, keyof Token> = node;
     if (partialOptions && hasOwnPropertyAvailable(partialOptions)) {
       nextNode = {
@@ -79,7 +86,7 @@ export function createToken<T extends SourceReference, O extends object = object
         children: createFragment(undefined, child).children
       };
     }
-    assertTokenVNode<T, O>(nextNode, node.isTokenSource, isOptionsOptions?.[IsTokenOptions] ?? ((value): value is O => value === nextNode.options));
+    assertTokenVNode<T, I & O>(nextNode, node.isTokenSource, isCompleteOptions);
     if (nextNode === node) {
       // Terminates the node, will no longer be a function
       return {
@@ -87,6 +94,13 @@ export function createToken<T extends SourceReference, O extends object = object
       };
     } else {
       return nextNode;
+    }
+
+    function isCompleteOptions(value: unknown): value is I & O {
+      if (isOptionsOptions?.[IsTokenOptions]) {
+        return isOptionsOptions[IsTokenOptions](value);
+      }
+      return value === nextNode.options;
     }
   }
   Object.assign(token, {
@@ -104,9 +118,17 @@ export function createToken<T extends SourceReference, O extends object = object
   const almost: unknown = token;
   // Even though we can provide partial options as per the type, if there are minimum requirements
   // then IsTokenOptions will verify this
-  assertTokenVNodeFn<T, O>(almost, isTokenSource, isOptionsOptions?.[IsTokenOptions] ?? ((value): value is O => Object.is(value, options)));
+  assertTokenVNodeFn<T, TokenInitialOptions<O, P>>(
+    almost,
+    isTokenSource,
+    isPartialOptions
+  );
   tokenized = almost;
   return tokenized;
+
+  function isPartialOptions(value: unknown): value is TokenInitialOptions<O, P> {
+    return Object.is(value, options);
+  }
 
   function is(value: unknown): value is TokenVNode<T, O> {
     return isTokenVNode(value, isTokenSource, isTokenOptions);
