@@ -266,15 +266,11 @@ describe("Tokens", () => {
                 ]}
             </>;
 
-            let tokens;
-
-            for await (const next of await filtered(things, (node: VNode): node is ThingToken | PersonToken | OrganizationToken => (
+            const tokens = await last(filtered(things, (node: VNode): node is ThingToken | PersonToken | OrganizationToken => (
                 Thing.is(node) ||
                 Person.is(node) ||
                 Organization.is(node)
-            )).children) {
-                tokens = next;
-            }
+            )).children);
 
             expect(tokens).toHaveLength(5);
             const [, person, , organization] = tokens;
