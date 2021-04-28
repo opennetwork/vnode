@@ -54,7 +54,7 @@ describe("Tokens", () => {
     const defaultInputOptions = {
         type: "text"
     };
-    type InputNodeFn = TokenVNodeFn<typeof InputSymbol, TokenInitialOptions<InputOptions, typeof defaultInputOptions>>;
+    type InputNodeFn = TokenVNodeFn<typeof InputSymbol, InputOptions, typeof defaultInputOptions>;
     const Input: InputNodeFn = createToken<typeof InputSymbol, InputOptions, typeof defaultInputOptions>(
         InputSymbol,
         defaultInputOptions,
@@ -205,7 +205,7 @@ describe("Tokens", () => {
                 url={new URL("/thing/1", origin)}
             />;
 
-            const firstPerson: PersonToken = <Person
+            const firstPerson = <Person
                 url={new URL("/person/first", origin)}
                 name="First Person"
                 knows={{
@@ -220,7 +220,7 @@ describe("Tokens", () => {
                 }}
             />;
 
-            const secondPerson: PersonToken = <Person
+            const secondPerson = <Person
                 url={new URL("/person/second", origin)}
                 name="Second Person"
                 knows={{
@@ -230,7 +230,7 @@ describe("Tokens", () => {
                 }}
             />;
 
-            const firstOrganization: OrganizationToken = <Organization
+            const firstOrganization = <Organization
                 url={new URL("/organization/first", origin)}
                 name="First Organization"
                 member={{
@@ -241,7 +241,7 @@ describe("Tokens", () => {
                 }}
             />;
 
-            const secondOrganization: OrganizationToken = <Organization
+            const secondOrganization = <Organization
                 url={new URL("/organization/first", origin)}
                 name="Second Organization"
                 member={{
@@ -281,6 +281,16 @@ describe("Tokens", () => {
 
             const found = members.find(member => member.options.url.toString() === person.options.url.toString());
             expect(found.options.url.toString()).toEqual(person.options.url.toString());
+
+            const alsoTokens = await last(filtered(things, isTokenVNode).children);
+
+            expect(alsoTokens).toHaveLength(tokens.length);
+
+            // This is proof yielding the same static values...
+            expect(alsoTokens).toContainEqual(person);
+            expect(alsoTokens).toContainEqual(organization);
+
+
 
         });
 

@@ -25,8 +25,9 @@ import {
   isIterableIterator,
   getNext
 } from "iterable";
-import { children as childrenGenerator } from "./children";
+import { children as childrenGenerator, ChildrenContext } from "./children";
 import { Fragment } from "./fragment";
+import { isReuse } from "@opennetwork/progressive-merge";
 
 // Access to re-assign a functional vnode child between children reads
 export const Child = Symbol("Function VNode Child");
@@ -148,6 +149,18 @@ export function createNode<O extends object = object, S extends SourceReference 
 };
 export function createNode<O extends object = object>(source: Source<O>, options?: O, ...children: VNodeRepresentationSource[]): VNode;
 export function createNode<O extends object = object>(source: Source<O>, options?: O, ...children: VNodeRepresentationSource[]): VNode {
+  const childrenContext: ChildrenContext = {
+    createNode,
+    /**
+     * Reuse will enable reuse of inflight vnode children updates to be utilised by separate vnode
+     * This will only be enabled if this value is true, and the children source is exactly the same within the same
+     * children grouping.
+     *
+     * To utilise this the vnode instances need to be present in a flat hierarchy
+     */
+    reuse: isReuse(options) || ((typeof source === "object" || typeof source === "function") ? isReuse(source) : false)
+  };
+
   /**
    * If the source is a function we're going to invoke it as soon as possible with the provided options
    *
@@ -178,6 +191,8 @@ export function createNode<O extends object = object>(source: Source<O>, options
   if (source === Fragment) {
     return createNode({ reference: Fragment, source }, options, ...children);
   }
+
+
   /**
    * If we already have a {@link VNode} then we don't and can't do any more
    */
@@ -202,7 +217,7 @@ export function createNode<O extends object = object>(source: Source<O>, options
     if (children.length && !nextSource.children) {
       nextSource = {
         ...nextSource,
-        children: replay(() => childrenGenerator(createNode, ...children))
+        children: replay(() => childrenGenerator(childrenContext, ...children))
       };
     }
     return nextSource;
@@ -252,11 +267,11 @@ export function createNode<O extends object = object>(source: Source<O>, options
    * We will create a `Fragment` that holds our node state to grab later
    */
   if (isIterable(source) || isAsyncIterable(source)) {
-    const childrenInstance = childrenGenerator(createNode, ...children);
+    const childrenInstance = childrenGenerator(childrenContext, ...children);
     return {
       source,
       reference: Fragment,
-      children: replay(() => childrenGenerator(createNode, asyncExtendedIterable(source).map(value => createNode(value, options, childrenInstance))))
+      children: replay(() => childrenGenerator(childrenContext, asyncExtendedIterable(source).map(value => createNode(value, options, childrenInstance))))
     };
   }
 
@@ -375,7 +390,7 @@ export function createNode<O extends object = object>(source: Source<O>, options
       scalar: !children.length,
       source,
       options,
-      children: children.length ? replay(() => childrenGenerator(createNode, ...children)) : undefined
+      children: children.length ? replay(() => childrenGenerator(childrenContext, ...children)) : undefined
     };
   }
 
