@@ -286,7 +286,7 @@ export function createNode<O extends object = object>(source: Source<O>, options
    * @param newReference
    * @param reference
    */
-  async function *generator(newReference: SourceReference, reference: IterableIterator<SourceReference> | AsyncIterableIterator<SourceReference>): AsyncIterable<ReadonlyArray<VNode>> {
+  async function *generator(newReference: SourceReference, reference: IterableIterator<SourceReference> | AsyncIterableIterator<SourceReference>): AsyncIterable<VNode[]> {
     let next: IteratorResult<SourceReference>;
     do {
       next = await getNext(reference, newReference);
@@ -297,15 +297,15 @@ export function createNode<O extends object = object>(source: Source<O>, options
       if (isFragmentVNode(nextNode)) {
         yield* nextNode.children ?? [];
       }
-      yield Object.freeze([nextNode]);
+      yield [nextNode];
     } while (!next.done);
   }
 
-  async function *promiseGenerator(promise: Promise<SourceReference | VNode>): AsyncIterable<ReadonlyArray<VNode>> {
+  async function *promiseGenerator(promise: Promise<SourceReference | VNode>): AsyncIterable<VNode[]> {
     const result = await promise;
-    yield Object.freeze([
+    yield [
       createNode(result, options, ...children)
-    ]);
+    ];
   }
 
   function functionVNode(source: SourceReferenceRepresentationFactory<O>): VNode {
@@ -324,7 +324,7 @@ export function createNode<O extends object = object>(source: Source<O>, options
     };
     return node;
 
-    async function *functionAsChildren(): AsyncIterable<ReadonlyArray<VNode>> {
+    async function *functionAsChildren(): AsyncIterable<VNode[]> {
       const options = node.options;
       const source = node.source;
 
@@ -369,7 +369,7 @@ export function createNode<O extends object = object>(source: Source<O>, options
       ...source,
       // Replace our reference if required
       reference: isSourceReference(source.reference) ? getMarshalledReference(source.reference) : getReference(source.options),
-      children: source.children ? replay(() => asyncExtendedIterable(source.children).map(children => Object.freeze([...children].map(unmarshal))).toIterable()) : undefined
+      children: source.children ? replay(() => asyncExtendedIterable(source.children).map(children => [...children].map(unmarshal))) : undefined
     };
   }
 

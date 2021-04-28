@@ -12,17 +12,17 @@ export interface ChildrenContext extends MergeOptions {
   createNode: CreateNodeFn;
 }
 
-async function* childrenUnion(context: ChildrenContext, childrenGroups: LaneInput<ReadonlyArray<VNode>>): AsyncIterable<ReadonlyArray<VNode>> {
+async function* childrenUnion(context: ChildrenContext, childrenGroups: LaneInput<VNode[]>): AsyncIterable<VNode[]> {
   for await (const parts of merge(childrenGroups, context)) {
     yield parts.reduce(
-      (updates: VNode[], part: (VNode | undefined)[]): VNode[] => updates.concat((part || []).filter(value => value)),
+      (updates: VNode[], part: VNode[]): VNode[] => part ? updates.concat(part.filter(Boolean)) : updates,
       []
     );
   }
 }
 
-export async function *children(context: ChildrenContext, ...source: VNodeRepresentationSource[]): AsyncIterable<ReadonlyArray<VNode>> {
-  async function *eachSource(source: VNodeRepresentationSource): AsyncIterable<ReadonlyArray<VNode>> {
+export async function *children(context: ChildrenContext, ...source: VNodeRepresentationSource[]): AsyncIterable<VNode[]> {
+  async function *eachSource(source: VNodeRepresentationSource): AsyncIterable<VNode[]> {
     if (typeof source === "undefined") {
       return;
     }
@@ -36,9 +36,9 @@ export async function *children(context: ChildrenContext, ...source: VNodeRepres
     }
 
     if (isVNode(source)) {
-      return yield Object.freeze([
+      return yield [
         source
-      ]);
+      ];
     }
 
     // These need further processing through createVNodeWithContext
