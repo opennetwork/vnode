@@ -12,10 +12,10 @@ export interface ChildrenContext extends MergeOptions {
   createNode: CreateNodeFn;
 }
 
-async function* childrenUnion(context: ChildrenContext, childrenGroups: LaneInput<VNode[]>): AsyncIterable<VNode[]> {
+export async function* childrenUnion<N extends VNode>(context: MergeOptions, childrenGroups: LaneInput<N[]>): AsyncIterable<N[]> {
   for await (const parts of merge(childrenGroups, context)) {
     yield parts.reduce(
-      (updates: VNode[], part: VNode[]): VNode[] => part ? updates.concat(part.filter(Boolean)) : updates,
+      (updates: N[], part: N[]): N[] => part ? updates.concat(part.filter(Boolean)) : updates,
       []
     );
   }

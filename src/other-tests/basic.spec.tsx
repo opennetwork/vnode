@@ -5,10 +5,7 @@ import { Component } from "typedoc/dist/lib/utils";
 import { h } from "../h";
 import { isVNode, VNode } from "../vnode";
 import { isSourceReference, SourceReference } from "../source-reference";
-import { Input } from "@opennetwork/progressive-merge/dist/async";
-import { LaneInput, merge } from "@opennetwork/progressive-merge";
-import { createFragment, Fragment } from "../fragment";
-import { filtered } from "../filter";
+import { childrenFiltered } from "../filter";
 
 class HydratingVContext extends WeakVContext {
   hydrate(node: VContextHydrateEvent["node"], tree?: VContextHydrateEvent["tree"]): Promise<void> {
@@ -31,7 +28,7 @@ describe("Basic", function () {
     function Component() {
       return expected;
     }
-    const iterator = sources(<Component />).children[Symbol.asyncIterator]();
+    const iterator = sources(<Component />)[Symbol.asyncIterator]();
     const { done, value: children } = await iterator.next();
     expect(done).toBeFalsy();
     expect(Array.isArray(children)).toBeTruthy();
@@ -58,7 +55,7 @@ describe("Basic", function () {
       initial,
       expected
     ];
-    for await (const [{ source: result }] of sources(<Component />).children) {
+    for await (const [{ source: result }] of sources(<Component />)) {
       const nextExpected = results.shift();
       expect(result).toEqual(nextExpected);
     }
@@ -68,8 +65,8 @@ describe("Basic", function () {
 });
 
 type SourceVNode = VNode & { source: SourceReference };
-function sources(node: VNode): VNode & { children: AsyncIterable<SourceVNode[]> } {
-  return filtered(node, isSourceVNode);
+function sources(node: VNode): AsyncIterable<SourceVNode[]> {
+  return childrenFiltered(node, isSourceVNode);
 
   function isSourceVNode(node: VNode): node is SourceVNode {
     return isSourceReference(node.source) && node.source !== node.reference;

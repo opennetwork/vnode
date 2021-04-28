@@ -1,5 +1,5 @@
 import { h } from "../h";
-import { filtered, filteredChildren } from "../filter";
+import { childrenFiltered } from "../filter";
 import { createToken, isTokenVNode, TokenInitialOptions, TokenVNode, TokenVNodeBase, TokenVNodeFn } from "../token";
 import { createFragment } from "../fragment";
 import { createNode } from "../create-node";
@@ -27,7 +27,7 @@ describe("Tokens", () => {
             );
         }
 
-        const tokens = await last(filteredChildren(<Component />, isTokenVNode));
+        const tokens = await last(childrenFiltered(<Component />, isTokenVNode));
         expect(tokens).toBeTruthy();
         expect(tokens.length).toEqual(2);
         const [firstName, lastName] = tokens;
@@ -68,7 +68,7 @@ describe("Tokens", () => {
             type: defaultType
         };
         const Input: InputNodeFn = createToken<typeof InputSymbol, InputOptions, typeof defaultOptions>(InputSymbol, defaultOptions);
-        const tokens = await last(filteredChildren(<Input />, isTokenVNode));
+        const tokens = await last(childrenFiltered(<Input />, isTokenVNode));
         expect(tokens).toBeTruthy();
         expect(tokens).toHaveLength(1);
         const [token] = tokens;
@@ -78,7 +78,7 @@ describe("Tokens", () => {
 
     it("allows options", async () => {
         const expectedType = `${Math.random()}`;
-        const tokens = await last(filteredChildren(<Input type={expectedType} />, isTokenVNode));
+        const tokens = await last(childrenFiltered(<Input type={expectedType} />, isTokenVNode));
         expect(tokens).toBeTruthy();
         expect(tokens).toHaveLength(1);
         const [token] = tokens;
@@ -88,7 +88,7 @@ describe("Tokens", () => {
 
     it("allows default children", async () => {
 
-        const tokens = await last(filteredChildren(<Input />, isTokenVNode));
+        const tokens = await last(childrenFiltered(<Input />, isTokenVNode));
 
         expect(tokens).toBeTruthy();
         expect(tokens).toHaveLength(1);
@@ -96,7 +96,7 @@ describe("Tokens", () => {
         const [input] = tokens;
         Input.assert(input);
 
-        const inputChildrenTokens = await last(filteredChildren(input, InputChildren.is));
+        const inputChildrenTokens = await last(childrenFiltered(input, InputChildren.is));
         expect(inputChildrenTokens).toBeTruthy();
         expect(inputChildrenTokens).toHaveLength(1);
         const [childToken] = inputChildrenTokens;
@@ -110,7 +110,7 @@ describe("Tokens", () => {
         const expected = Math.random();
 
         const tokens = await last(
-            filteredChildren((
+            childrenFiltered((
                 <Input>
                     <InputChildren option={expected} />
                 </Input>
@@ -123,7 +123,7 @@ describe("Tokens", () => {
         const [input] = tokens;
         Input.assert(input);
 
-        const inputChildrenTokens = await last(filteredChildren(input, InputChildren.is));
+        const inputChildrenTokens = await last(childrenFiltered(input, InputChildren.is));
         expect(inputChildrenTokens).toBeTruthy();
         expect(inputChildrenTokens).toHaveLength(1);
         const [childToken] = inputChildrenTokens;
@@ -139,7 +139,7 @@ describe("Tokens", () => {
         expect(inputChild1Option).not.toEqual(inputChild2Option);
 
         const tokens = await last(
-            filteredChildren((
+            childrenFiltered((
                 <Input>
                     <InputChildren option={inputChild1Option} />
                     <InputChildren option={inputChild2Option} />
@@ -153,7 +153,7 @@ describe("Tokens", () => {
         const [input] = tokens;
         Input.assert(input);
 
-        const inputChildrenTokens = await last(filteredChildren(input, InputChildren.is));
+        const inputChildrenTokens = await last(childrenFiltered(input, InputChildren.is));
         expect(inputChildrenTokens).toBeTruthy();
         expect(inputChildrenTokens).toHaveLength(2);
         const [childToken1, childToken2] = inputChildrenTokens;
@@ -266,11 +266,11 @@ describe("Tokens", () => {
                 ]}
             </>;
 
-            const tokens = await last(filtered(things, (node: VNode): node is ThingToken | PersonToken | OrganizationToken => (
+            const tokens = await last(childrenFiltered(things, (node: VNode): node is ThingToken | PersonToken | OrganizationToken => (
                 Thing.is(node) ||
                 Person.is(node) ||
                 Organization.is(node)
-            )).children);
+            )));
 
             expect(tokens).toHaveLength(5);
             const [, person, , organization] = tokens;

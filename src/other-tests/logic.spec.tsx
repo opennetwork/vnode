@@ -1,16 +1,16 @@
 import { h } from "../h";
 import { isVNode, VNode } from "../vnode";
 import { isSourceReference, SourceReference } from "../source-reference";
-import { filtered } from "../filter";
+import { childrenFiltered } from "../filter";
 
 interface IsProps<M extends VNode = VNode> {
-    map?(input: VNode): VNode & { children: AsyncIterable<M[]>};
+    map?(input: VNode): AsyncIterable<M[]>;
     match(node: M[]): boolean;
 }
 
 async function *Is({ map, match }: IsProps, input: VNode) {
     let yielded = false;
-    for await (const children of (map ?? sources)(input).children) {
+    for await (const children of (map ?? sources)(input)) {
         yield match(children);
         yielded = true;
     }
@@ -18,7 +18,7 @@ async function *Is({ map, match }: IsProps, input: VNode) {
 }
 
 interface MapMatchProps<M extends VNode = VNode> {
-    map?(input: VNode): VNode & { children: AsyncIterable<M[]>};
+    map?(input: VNode): AsyncIterable<M[]>;
     match?(node: M): boolean;
 }
 
@@ -109,7 +109,7 @@ describe("Logic", function () {
 async function eventually(node: VNode, match: unknown, flush: boolean = false) {
     let value: unknown = undefined,
         yielded = false;
-    for await (const [result] of sources(node).children) {
+    for await (const [result] of sources(node)) {
         expect(isVNode(result)).toBeTruthy();
         const { source } = result;
         value = source;
@@ -126,8 +126,8 @@ async function eventually(node: VNode, match: unknown, flush: boolean = false) {
 }
 
 type SourceVNode = VNode & { source: SourceReference };
-function sources(node: VNode): VNode & { children: AsyncIterable<SourceVNode[]> } {
-    return filtered(node, isSourceVNode);
+function sources(node: VNode): AsyncIterable<SourceVNode[]> {
+    return childrenFiltered(node, isSourceVNode);
 
     function isSourceVNode(node: VNode): node is SourceVNode {
         return isSourceReference(node.source) && node.source !== node.reference;
