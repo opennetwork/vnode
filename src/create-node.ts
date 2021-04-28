@@ -25,7 +25,7 @@ import {
   isIterableIterator,
   getNext
 } from "iterable";
-import { children as childrenGenerator } from "./children";
+import { children as childrenGenerator, ChildrenContext } from "./children";
 import { Fragment } from "./fragment";
 
 // Access to re-assign a functional vnode child between children reads
@@ -115,6 +115,10 @@ type TestThrow = CreateNodeFnCatch<
   typeof createNode
 >;
 
+const childrenContext: ChildrenContext = {
+  createNode
+};
+
 /**
  * Generates instances of {@link FragmentVNode} based on the provided source
  *
@@ -202,7 +206,7 @@ export function createNode<O extends object = object>(source: Source<O>, options
     if (children.length && !nextSource.children) {
       nextSource = {
         ...nextSource,
-        children: replay(() => childrenGenerator(createNode, ...children))
+        children: replay(() => childrenGenerator(childrenContext, ...children))
       };
     }
     return nextSource;
@@ -252,11 +256,11 @@ export function createNode<O extends object = object>(source: Source<O>, options
    * We will create a `Fragment` that holds our node state to grab later
    */
   if (isIterable(source) || isAsyncIterable(source)) {
-    const childrenInstance = childrenGenerator(createNode, ...children);
+    const childrenInstance = childrenGenerator(childrenContext, ...children);
     return {
       source,
       reference: Fragment,
-      children: replay(() => childrenGenerator(createNode, asyncExtendedIterable(source).map(value => createNode(value, options, childrenInstance))))
+      children: replay(() => childrenGenerator(childrenContext, asyncExtendedIterable(source).map(value => createNode(value, options, childrenInstance))))
     };
   }
 
@@ -375,7 +379,7 @@ export function createNode<O extends object = object>(source: Source<O>, options
       scalar: !children.length,
       source,
       options,
-      children: children.length ? replay(() => childrenGenerator(createNode, ...children)) : undefined
+      children: children.length ? replay(() => childrenGenerator(childrenContext, ...children)) : undefined
     };
   }
 

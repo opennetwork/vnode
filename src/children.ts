@@ -5,11 +5,15 @@ import {
   isIterableIterator,
   isPromise
 } from "iterable";
-import { Source } from "./source";
-import { LaneInput, merge } from "@opennetwork/progressive-merge";
+import { LaneInput, merge, MergeOptions } from "@opennetwork/progressive-merge";
+import type { CreateNodeFn } from "./create-node";
 
-async function* childrenUnion(childrenGroups: LaneInput<ReadonlyArray<VNode>>): AsyncIterable<ReadonlyArray<VNode>> {
-  for await (const parts of merge(childrenGroups)) {
+export interface ChildrenContext extends MergeOptions {
+  createNode: CreateNodeFn;
+}
+
+async function* childrenUnion(context: ChildrenContext, childrenGroups: LaneInput<ReadonlyArray<VNode>>): AsyncIterable<ReadonlyArray<VNode>> {
+  for await (const parts of merge(childrenGroups, context)) {
     yield parts.reduce(
       (updates: VNode[], part: (VNode | undefined)[]): VNode[] => updates.concat((part || []).filter(value => value)),
       []
@@ -17,7 +21,7 @@ async function* childrenUnion(childrenGroups: LaneInput<ReadonlyArray<VNode>>): 
   }
 }
 
-export async function *children(createNode: (source: Source<never>) => VNode, ...source: VNodeRepresentationSource[]): AsyncIterable<ReadonlyArray<VNode>> {
+export async function *children(context: ChildrenContext, ...source: VNodeRepresentationSource[]): AsyncIterable<ReadonlyArray<VNode>> {
   async function *eachSource(source: VNodeRepresentationSource): AsyncIterable<ReadonlyArray<VNode>> {
     if (typeof source === "undefined") {
       return;
@@ -39,10 +43,11 @@ export async function *children(createNode: (source: Source<never>) => VNode, ..
 
     // These need further processing through createVNodeWithContext
     if (isSourceReference(source) || isMarshalledVNode(source) || isIterableIterator(source)) {
-      return yield* eachSource(createNode(source));
+      return yield* eachSource(context.createNode(source));
     }
 
     return yield* childrenUnion(
+      context,
       asyncExtendedIterable(source).map(eachSource)
     );
   }
@@ -50,6 +55,6 @@ export async function *children(createNode: (source: Source<never>) => VNode, ..
   if (source.length === 1) {
     return yield* eachSource(source[0]);
   } else {
-    return yield* childrenUnion(source.map(eachSource));
+    return yield* childrenUnion(context, source.map(eachSource));
   }
 }
