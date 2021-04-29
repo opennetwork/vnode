@@ -1,4 +1,4 @@
-export interface Assertion<V, T extends V> {
+interface Assertion<V, T extends V> {
   is(value: V): value is T;
   message?: string;
 }

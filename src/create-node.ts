@@ -31,14 +31,15 @@ import { Fragment } from "./fragment";
 // Access to re-assign a functional vnode child between children reads
 export const Child = Symbol("Function VNode Child");
 
-export type CreateNodeFragmentSource =
+export type CreateNodeFragmentSourceFirstStage =
+  | Function
+  | Promise<unknown>
+  | typeof Fragment;
+
+export type CreateNodeFragmentSourceSecondStage =
   | AsyncIterable<unknown>
   | Iterable<unknown>
   | IterableIterator<unknown>
-  | Function
-  | Promise<unknown>
-  | FragmentVNode
-  | typeof Fragment
   | undefined
   | null;
 
@@ -48,24 +49,43 @@ export interface CreateNodeFn<
   C extends VNodeRepresentationSource = VNodeRepresentationSource,
   Output extends VNode = VNode
   > {
-  <Input extends FragmentVNode>(source: Input, ...throwAway: unknown[]): Input;
-  <Input extends VNode>(source: Input, ...throwAway: unknown[]): Input;
-  <TO extends O, S extends CreateNodeFragmentSource>(source: S): FragmentVNode & {
+  <TO extends O, S extends CreateNodeFragmentSourceFirstStage>(source: S): FragmentVNode & {
     source: S;
     options: never;
     children: never;
   };
-  <S extends CreateNodeFragmentSource>(source: S): FragmentVNode & {
+  <S extends CreateNodeFragmentSourceFirstStage>(source: S): FragmentVNode & {
     source: S;
     options: never;
     children: never;
   };
-  <TO extends O, S extends CreateNodeFragmentSource>(source: S, options: TO): FragmentVNode & {
+  <TO extends O, S extends CreateNodeFragmentSourceFirstStage>(source: S, options: TO): FragmentVNode & {
     source: S;
     options: TO;
     children: never;
   };
-  <TO extends O, S extends CreateNodeFragmentSource>(source: S, options?: TO, ...children: C[]): FragmentVNode & {
+  <TO extends O, S extends CreateNodeFragmentSourceFirstStage>(source: S, options?: TO, ...children: C[]): FragmentVNode & {
+    source: S;
+    options: TO;
+  };
+  <Input extends FragmentVNode>(source: Input, ...throwAway: unknown[]): Input;
+  <Input extends VNode>(source: Input, ...throwAway: unknown[]): Input;
+  <TO extends O, S extends CreateNodeFragmentSourceSecondStage>(source: S): FragmentVNode & {
+    source: S;
+    options: never;
+    children: never;
+  };
+  <S extends CreateNodeFragmentSourceSecondStage>(source: S): FragmentVNode & {
+    source: S;
+    options: never;
+    children: never;
+  };
+  <TO extends O, S extends CreateNodeFragmentSourceSecondStage>(source: S, options: TO): FragmentVNode & {
+    source: S;
+    options: TO;
+    children: never;
+  };
+  <TO extends O, S extends CreateNodeFragmentSourceSecondStage>(source: S, options?: TO, ...children: C[]): FragmentVNode & {
     source: S;
     options: TO;
   };
@@ -91,9 +111,9 @@ export interface CreateNodeFn<
 
 
 export type CreateNodeFnUndefinedOptionsCatch<
-  Test extends (source: CreateNodeFragmentSource) => FragmentVNode & { source: CreateNodeFragmentSource, options: never }> = Test;
+  Test extends (source: CreateNodeFragmentSourceFirstStage) => FragmentVNode & { source: CreateNodeFragmentSourceFirstStage, options: never }> = Test;
 export type CreateNodeFnGivenOptionsCatch<
-  Test extends (source: CreateNodeFragmentSource, options: { key: "value" }) => FragmentVNode & { source: CreateNodeFragmentSource, options: { key: "value" } }> = Test;
+  Test extends (source: CreateNodeFragmentSourceFirstStage, options: { key: "value" }) => FragmentVNode & { source: CreateNodeFragmentSourceFirstStage, options: { key: "value" } }> = Test;
 
 type ThrowAwayCreateNodeFnUndefinedOptionsCatch = CreateNodeFnUndefinedOptionsCatch<typeof createNode>;
 type ThrowAwayCreateNodeFnGivenOptionsCatch = CreateNodeFnGivenOptionsCatch<typeof createNode>;
@@ -129,20 +149,29 @@ const childrenContext: ChildrenContext = {
  * The special case to point out here is if the source is an `IterableIterator` (see {@link https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#Is_a_generator_object_an_iterator_or_an_iterable})
  * then each iteration will result in a new {@link VNode} being created
  */
-export function createNode<Input extends FragmentVNode>(source: Input, ...throwAway: unknown[]): Input;
-export function createNode<Input extends VNode = VNode>(source: Input, ...throwAway: unknown[]): Input;
-export function createNode<O extends object = object, S extends CreateNodeFragmentSource = CreateNodeFragmentSource>(source: S, options?: O, ...children: VNodeRepresentationSource[]): FragmentVNode & {
+export function createNode<O extends object = object, S extends CreateNodeFragmentSourceFirstStage = CreateNodeFragmentSourceFirstStage>(source: S, options?: O, ...children: VNodeRepresentationSource[]): FragmentVNode & {
   source: S;
   options: O;
 };
-export function createNode<O extends object = object, S extends CreateNodeFragmentSource = CreateNodeFragmentSource>(source: S, options?: O, ...children: VNodeRepresentationSource[]): FragmentVNode & {
+export function createNode<O extends object = object, S extends CreateNodeFragmentSourceFirstStage = CreateNodeFragmentSourceFirstStage>(source: S, options?: O, ...children: VNodeRepresentationSource[]): FragmentVNode & {
+  source: S;
+  options: O;
+};
+export function createNode<Input extends FragmentVNode>(source: Input, ...throwAway: unknown[]): Input;
+export function createNode<Input extends VNode = VNode>(source: Input, ...throwAway: unknown[]): Input;
+
+export function createNode<O extends object = object, S extends CreateNodeFragmentSourceSecondStage = CreateNodeFragmentSourceSecondStage>(source: S, options?: O, ...children: VNodeRepresentationSource[]): FragmentVNode & {
+  source: S;
+  options: O;
+};
+export function createNode<O extends object = object, S extends CreateNodeFragmentSourceSecondStage = CreateNodeFragmentSourceSecondStage>(source: S, options?: O, ...children: VNodeRepresentationSource[]): FragmentVNode & {
   source: S;
   options: O;
 };
 export function createNode<O extends object = object, S extends SourceReference = SourceReference>(source: S, options?: O): VNode & {
   source: S;
   options: O;
-  scalar: boolean;
+  scalar: true;
   children: never;
 };
 export function createNode<O extends object = object, S extends SourceReference = SourceReference>(source: S, options?: O, ...children: VNodeRepresentationSource[]): VNode & {
@@ -167,7 +196,7 @@ export function createNode<O extends object = object>(source: Source<O>, options
    * This may be wasteful, but the idea is that we wouldn't cause a next tick for no reason
    * Maybe this isn't the case if the value isn't a promise to start with ¯\_(ツ)_/¯
    */
-  if (isPromise(source)) {
+  if (source && isPromise(source)) {
     return {
       source,
       reference: Fragment,
@@ -185,7 +214,7 @@ export function createNode<O extends object = object>(source: Source<O>, options
   /**
    * If we already have a {@link VNode} then we don't and can't do any more
    */
-  if (isVNode(source)) {
+  if (source && isVNode(source)) {
     let nextSource: VNode = source;
     /**
      * Extend our vnode options if we have been provided them
@@ -216,7 +245,7 @@ export function createNode<O extends object = object>(source: Source<O>, options
    * If we already have a {@link MarshalledVNode} then we need to turn its children into an async iterable
    * and ensure they're unmarshalled
    */
-  if (isMarshalledVNode(source)) {
+  if (source && isMarshalledVNode(source)) {
     return unmarshal(source);
   }
 
@@ -242,7 +271,7 @@ export function createNode<O extends object = object>(source: Source<O>, options
    *
    * See {@link generator} for details
    */
-  if (isIterableIterator(source)) {
+  if (source && isIterableIterator(source)) {
     return {
       source,
       reference: Fragment,
@@ -255,7 +284,7 @@ export function createNode<O extends object = object>(source: Source<O>, options
    *
    * We will create a `Fragment` that holds our node state to grab later
    */
-  if (isIterable(source) || isAsyncIterable(source)) {
+  if (source && (isIterable(source) || isAsyncIterable(source))) {
     const childrenInstance = childrenGenerator(childrenContext, ...children);
     return {
       source,
