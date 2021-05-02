@@ -45,6 +45,8 @@ export type CreateNodeFragmentSourceSecondStage =
       [false],
       [1],
       [0],
+      [1n],
+      [0n],
       [""],
       ["Hello!"],
     ])("%p should produce a scalar node", async <I extends SourceReference>(input: I ) => {
