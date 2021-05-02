@@ -50,8 +50,10 @@ export type CreateNodeFragmentSourceSecondStage =
       [""],
       ["Hello!"],
     ])("%p should produce a scalar node", async <I extends SourceReference>(input: I ) => {
-      const output: ScalarVNode & { source: I } = createNode(input);
+      const output = createNode(input);
       expect(isScalarVNode(output)).toEqual(true);
+      const source: I = output.source;
+      expect(source).toEqual(input);
     });
 
     async function *asyncGenerator() {
