@@ -1,13 +1,22 @@
 import { isSourceReference, SourceReference, MarshalledSourceReference } from "./source-reference";
 import { isAsyncIterable, AsyncIterableLike, isIterable } from "iterable";
 import { Fragment } from "./fragment";
+import { DirectedEdge } from "./edges";
 
 /**
  * Generic VNode, represents a virtual node within a state tree
  *
  * The VNode can be used to hydrate native state or external sources
  */
-export interface VNode {
+export interface VNode
+  extends
+    /**
+     * This documents future state where nodes can have alternative directed edges.
+     *
+     * Currently only children has been used, but there is no reason another direction
+     * cannot be utilised.
+     */
+    Partial<Record<DirectedEdge, AsyncIterable<VNode[]>>> {
   /**
    * A unique reference to this {@link VNode}, this could be a globally unique symbol like {@link Fragment}
    */

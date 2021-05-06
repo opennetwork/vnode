@@ -1,7 +1,8 @@
 import { h } from "../h";
 import { isVNode, VNode } from "../vnode";
 import { isSourceReference, SourceReference } from "../source-reference";
-import { childrenFiltered } from "../filter";
+import { edgesFiltered } from "../filter";
+import { DirectedEdge } from "../edges";
 
 interface IsProps<M extends VNode = VNode> {
     map?(input: VNode): AsyncIterable<M[]>;
@@ -74,7 +75,12 @@ describe("Logic", function () {
             yield <Every>{1}{0}</Every>;
             yield <Every>{1}{1}</Every>;
         }
-        await assertEventually(<Thing />, true, true);
+        await assertEventually(
+            <Eventually match={true} flush={true}>
+                <Thing />
+            </Eventually>,
+            true
+        );
     });
 
     it("some", async () => {
@@ -126,8 +132,8 @@ async function eventually(node: VNode, match: unknown, flush: boolean = false) {
 }
 
 type SourceVNode = VNode & { source: SourceReference };
-function sources(node: VNode): AsyncIterable<SourceVNode[]> {
-    return childrenFiltered(node, isSourceVNode);
+function sources(node: VNode, direction: DirectedEdge = "children"): AsyncIterable<SourceVNode[]> {
+    return edgesFiltered(node, direction, isSourceVNode);
 
     function isSourceVNode(node: VNode): node is SourceVNode {
         return isSourceReference(node.source) && node.source !== node.reference;

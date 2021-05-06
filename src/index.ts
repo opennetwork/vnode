@@ -5,7 +5,7 @@ export * from "./vcontext-weak";
 export * from "./vcontext-events";
 export * from "./vnode";
 export * from "./hydrate";
-export * from "./children";
+export * from "./edges";
 export * from "./create-node";
 export * from "./tree";
 export * from "./marshal";

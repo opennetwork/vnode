@@ -25,7 +25,7 @@ import {
   isIterableIterator,
   getNext
 } from "iterable";
-import { children as childrenGenerator, ChildrenContext } from "./children";
+import { edges as childrenGenerator, EdgesContext } from "./edges";
 import { Fragment } from "./fragment";
 
 // Access to re-assign a functional vnode child between children reads
@@ -135,7 +135,7 @@ type TestThrow = CreateNodeFnCatch<
   typeof createNode
 >;
 
-const childrenContext: ChildrenContext = {
+const childrenContext: EdgesContext = {
   createNode
 };
 

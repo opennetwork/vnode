@@ -8,12 +8,18 @@ import {
 import { LaneInput, merge, MergeOptions } from "@opennetwork/progressive-merge";
 import type { CreateNodeFn } from "./create-node";
 
-export interface ChildrenContext extends MergeOptions {
+export interface EdgesContext extends MergeOptions {
   createNode: CreateNodeFn;
 }
 
+export type DirectedEdge = "children";
+
 export async function* childrenUnion<N extends VNode>(context: MergeOptions, childrenGroups: LaneInput<N[]>): AsyncIterable<N[]> {
-  for await (const parts of merge(childrenGroups, context)) {
+  yield *edgesUnion(context, childrenGroups);
+}
+
+export async function* edgesUnion<N extends VNode>(context: MergeOptions, edgesGroups: LaneInput<N[]>): AsyncIterable<N[]> {
+  for await (const parts of merge(edgesGroups, context)) {
     yield parts.reduce(
       (updates: N[], part: N[]): N[] => part ? updates.concat(part.filter(Boolean)) : updates,
       []
@@ -21,7 +27,11 @@ export async function* childrenUnion<N extends VNode>(context: MergeOptions, chi
   }
 }
 
-export async function *children(context: ChildrenContext, ...source: VNodeRepresentationSource[]): AsyncIterable<VNode[]> {
+export async function *children(context: EdgesContext, ...source: VNodeRepresentationSource[]): AsyncIterable<VNode[]> {
+  yield *edges(context, ...source);
+}
+
+export async function *edges(context: EdgesContext, ...source: VNodeRepresentationSource[]): AsyncIterable<VNode[]> {
   async function *eachSource(source: VNodeRepresentationSource): AsyncIterable<VNode[]> {
     if (typeof source === "undefined") {
       return;
@@ -46,7 +56,7 @@ export async function *children(context: ChildrenContext, ...source: VNodeRepres
       return yield* eachSource(context.createNode(source));
     }
 
-    return yield* childrenUnion(
+    return yield* edgesUnion(
       context,
       asyncExtendedIterable(source).map(eachSource)
     );
@@ -55,6 +65,6 @@ export async function *children(context: ChildrenContext, ...source: VNodeRepres
   if (source.length === 1) {
     return yield* eachSource(source[0]);
   } else {
-    return yield* childrenUnion(context, source.map(eachSource));
+    return yield* edgesUnion(context, source.map(eachSource));
   }
 }

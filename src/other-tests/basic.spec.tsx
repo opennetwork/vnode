@@ -5,7 +5,8 @@ import { Component } from "typedoc/dist/lib/utils";
 import { h } from "../h";
 import { isVNode, VNode } from "../vnode";
 import { isSourceReference, SourceReference } from "../source-reference";
-import { childrenFiltered } from "../filter";
+import { edgesFiltered } from "../filter";
+import { DirectedEdge } from "../edges";
 
 class HydratingVContext extends WeakVContext {
   hydrate(node: VContextHydrateEvent["node"], tree?: VContextHydrateEvent["tree"]): Promise<void> {
@@ -65,8 +66,8 @@ describe("Basic", function () {
 });
 
 type SourceVNode = VNode & { source: SourceReference };
-function sources(node: VNode): AsyncIterable<SourceVNode[]> {
-  return childrenFiltered(node, isSourceVNode);
+function sources(node: VNode, direction: DirectedEdge = "children"): AsyncIterable<SourceVNode[]> {
+  return edgesFiltered(node, direction, isSourceVNode);
 
   function isSourceVNode(node: VNode): node is SourceVNode {
     return isSourceReference(node.source) && node.source !== node.reference;
