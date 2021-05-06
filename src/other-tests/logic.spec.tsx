@@ -76,7 +76,7 @@ describe("Logic", function () {
             yield <Every>{1}{1}</Every>;
         }
         await assertEventually(
-            <Eventually match={true} flush={true}>
+            <Eventually match={true} flush={true} output={true}>
                 <Thing />
             </Eventually>,
             true
