@@ -1,5 +1,14 @@
-import { isFragmentVNode, isMarshalledVNode, isVNode, VNode, VNodeRepresentationSource } from "./vnode";
-import { isSourceReference } from "./source-reference";
+import {
+  FragmentVNode,
+  isFragmentVNode,
+  isMarshalledVNode,
+  isVNode,
+  MarshalledVNode,
+  ScalarVNode,
+  VNode,
+  VNodeRepresentationSource
+} from "./vnode";
+import { isSourceReference, SourceReference } from "./source-reference";
 import {
   asyncExtendedIterable,
   isIterableIterator,
@@ -21,8 +30,23 @@ export async function* childrenUnion<N extends VNode>(context: MergeOptions, chi
   }
 }
 
-export async function *children(context: ChildrenContext, ...source: VNodeRepresentationSource[]): AsyncIterable<VNode[]> {
-  async function *eachSource(source: VNodeRepresentationSource): AsyncIterable<VNode[]> {
+export type ChildrenSourceResolution<C> =
+  C extends undefined ? unknown :
+  C extends Promise<infer R> ? ChildrenSourceResolution<R> :
+  C extends FragmentVNode ? C extends { children: AsyncIterable<(infer R)[]> } ? ChildrenSourceResolution<R> : unknown :
+  C extends VNode ? C :
+  C extends SourceReference ? ScalarVNode & { source: C } :
+  C extends MarshalledVNode ? VNode & Exclude<C, "children">:
+  C extends AsyncGenerator<infer R> ? ChildrenSourceResolution<R> :
+  C extends Generator<infer R> ? ChildrenSourceResolution<R> :
+  C extends AsyncIterable<infer R> ? ChildrenSourceResolution<R> :
+  C extends Iterable<infer R> ? ChildrenSourceResolution<R> :
+  VNode;
+
+export type ChildrenResolution<C extends VNodeRepresentationSource[]> = ChildrenSourceResolution<C[0]>;
+
+export async function *children<C extends VNodeRepresentationSource[]>(context: ChildrenContext, ...source: C): AsyncIterable<ChildrenResolution<C>[]> {
+  async function *eachSource(source: VNodeRepresentationSource): AsyncIterable<ChildrenResolution<C>[]> {
     if (typeof source === "undefined") {
       return;
     }
@@ -31,14 +55,18 @@ export async function *children(context: ChildrenContext, ...source: VNodeRepres
       return yield* eachSource(await source);
     }
 
-    if (isFragmentVNode(source)) {
+    if (isFragmentChildrenResolution(source)) {
       return yield* source.children ?? [];
     }
 
-    if (isVNode(source)) {
+    if (isVNodeChildrenResolution(source)) {
       return yield [
         source
       ];
+    }
+
+    if (isVNode(source)) {
+      throw new Error("Unexpected, isVNodeChildrenResolution returns true for all isVNode");
     }
 
     // These need further processing through createVNodeWithContext
@@ -50,6 +78,14 @@ export async function *children(context: ChildrenContext, ...source: VNodeRepres
       context,
       asyncExtendedIterable(source).map(eachSource)
     );
+
+    function isFragmentChildrenResolution(source: VNodeRepresentationSource): source is VNode & { children: AsyncIterable<ChildrenResolution<C>[]> } {
+      return isFragmentVNode(source);
+    }
+
+    function isVNodeChildrenResolution(source: VNodeRepresentationSource): source is VNode & ChildrenResolution<C> {
+      return isVNode(source);
+    }
   }
 
   if (source.length === 1) {

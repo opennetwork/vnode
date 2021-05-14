@@ -1,5 +1,11 @@
 import { Fragment } from "./fragment";
-import { createNode, CreateNodeFragmentSourceFirstStage, CreateNodeFragmentSourceSecondStage } from "./create-node";
+import {
+  CallVNodeFn,
+  createNode,
+  CreateNodeFragmentSourceFirstStage,
+  CreateNodeFragmentSourceSecondStage
+} from "./create-node";
+import { CreateNodeFn } from "./create-node-static";
 import { FragmentVNode, isFragmentVNode, isScalarVNode, ScalarVNode, VNode } from "./vnode";
 import { SourceReference } from "./source-reference";
 
@@ -82,6 +88,40 @@ export type CreateNodeFragmentSourceSecondStage =
       const node: unknown = { key: 1 };
       // pls no
       expect(() => createNode(node as VNode)).toThrow();
+    });
+
+    function A() {
+      return createNode("This is the content of A");
+    }
+
+    function B() {
+      return createNode("This is the content of B");
+    }
+
+    function C() {
+      return createNode("This is the content of C");
+    }
+
+    function D() {
+      return [
+        createNode(A),
+        createNode(B)
+      ];
+    }
+
+    async function *E() {
+      yield createNode(D);
+      yield createNode(C);
+    }
+
+    it("works", async () => {
+      const node = createNode(E);
+      const iterable = node.children;
+      for await (const children of iterable) {
+        const values = children.map(node => node.source);
+        console.log({ values, children });
+      }
+
     });
 
   });
