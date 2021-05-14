@@ -365,6 +365,7 @@ export function createNode<O extends object = object>(source: Source<O>, options
 
       // Referencing node here allows for external to update the nodes implementation on the fly...
       const nextSource = source(options, child);
+
       // If the nextSource is the same as node.source, then we should finish here, it will always return itself
       // If node.source returns a promise then we can safely assume this was intentional as a "loop" around
       // A function can also return an iterator (async or sync) that returns itself too
@@ -379,9 +380,7 @@ export function createNode<O extends object = object>(source: Source<O>, options
         options !== node.options ||
         child !== node[Child]
       ) {
-        yield [
-          createNode(nextSource)
-        ];
+        yield * childrenGenerator(childrenContext, createNode(nextSource));
       }
     }
 

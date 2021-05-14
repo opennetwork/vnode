@@ -32,7 +32,16 @@ export async function *children(context: ChildrenContext, ...source: VNodeRepres
     }
 
     if (isFragmentVNode(source)) {
-      return yield* source.children ?? [];
+      if (!source.children) {
+        return;
+      }
+      for await (const children of source.children) {
+        yield * childrenUnion(
+          context,
+          children.map(eachSource)
+        );
+      }
+      return;
     }
 
     if (isVNode(source)) {
